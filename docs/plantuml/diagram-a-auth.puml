@@ -1,0 +1,246 @@
+@startuml
+' ============================================================
+' SportDataAuth - AUTH / IDENTITY (MVP ONLY)
+' Goal: accounts + registration + agent activation + login tokens
+' No audit, no admin governance, no data collection domain.
+' All timestamps use LocalDateTime.
+' ============================================================
+
+skinparam classAttributeIconSize 0
+
+' =========================
+' ENUMS
+' =========================
+package "com.sportdataauth.model" {
+
+  enum Role {
+    AGENT
+    CLIENT
+    ADMIN
+  }
+
+  enum UserStatus {
+    ACTIVE
+    LOCKED
+    DISABLED
+  }
+
+  enum TokenPurpose {
+    FIRST_PASSWORD_SET
+    PASSWORD_RESET
+  }
+}
+
+' =========================
+' ENTITIES / MODELS
+' =========================
+package "com.sportdataauth.model" {
+
+  class User {
+    - id: UUID
+    - email: String
+    - passwordHash: String
+    - roles: Set<Role>
+    - status: UserStatus
+    - failedAttempts: int
+    - createdAt: LocalDateTime
+    - lastLoginAt: LocalDateTime
+
+    + hasRole(role: Role): boolean
+    + isActive(): boolean
+  }
+
+  class InvitationToken {
+    - id: UUID
+    - userId: UUID
+    - tokenHash: String
+    - purpose: TokenPurpose
+    - expiresAt: LocalDateTime
+    - usedAt: LocalDateTime
+    - createdAt: LocalDateTime
+
+    + isExpired(now: LocalDateTime): boolean
+    + isUsed(): boolean
+  }
+}
+
+' =========================
+' DTOs
+' =========================
+package "com.sportdataauth.dto" {
+
+  class RegisterRequest {
+    + email: String
+    + password: String
+  }
+
+  class LoginRequest {
+    + email: String
+    + password: String
+  }
+
+  class ProvisionAgentRequest {
+    + email: String
+  }
+
+  class InviteAcceptRequest {
+    + token: String
+    + newPassword: String
+  }
+
+  class TokenResponse {
+    + accessToken: String
+    + refreshToken: String
+    + expiresAt: LocalDateTime
+  }
+
+  class UserResponse {
+    + id: UUID
+    + email: String
+    + roles: Set<Role>
+    + status: UserStatus
+    + createdAt: LocalDateTime
+  }
+}
+
+' =========================
+' REPOSITORIES
+' =========================
+package "com.sportdataauth.repository" {
+
+  interface UserRepository {
+    + findByEmail(email: String): User
+    + findById(id: UUID): User
+    + save(user: User): void
+  }
+
+  interface InvitationTokenRepository {
+    + findValidByTokenHash(tokenHash: String, now: LocalDateTime): InvitationToken
+    + save(token: InvitationToken): void
+    + markUsed(tokenId: UUID, usedAt: LocalDateTime): void
+  }
+}
+
+' =========================
+' UTIL
+' =========================
+package "com.sportdataauth.util" {
+
+  class Validator {
+    + isValidEmail(email: String): boolean
+    + isValidPassword(password: String): boolean
+  }
+
+  class TokenHasher {
+    + hash(rawToken: String): String
+  }
+
+  class TokenGenerator {
+    + generateToken(): String
+  }
+
+  class Clock {
+    + now(): LocalDateTime
+  }
+}
+
+' =========================
+' SECURITY (MVP token issuance)
+' =========================
+package "com.sportdataauth.security" {
+
+  class JwtService {
+    + generateAccessToken(user: User): String
+    + generateRefreshToken(user: User): String
+    + validateAccessToken(token: String): boolean
+  }
+
+  class RefreshTokenService {
+    + rotateRefreshToken(userId: UUID, refreshToken: String): String
+    + revokeAll(userId: UUID): void
+  }
+
+  class PasswordHasher {
+    + hash(rawPassword: String): String
+    + matches(rawPassword: String, passwordHash: String): boolean
+  }
+}
+
+' =========================
+' SERVICES (AUTH MVP)
+' =========================
+package "com.sportdataauth.service" {
+
+  class RegisterService {
+    - userRepository: UserRepository
+    - validator: Validator
+    - passwordHasher: PasswordHasher
+    - clock: Clock
+
+    + registerClient(req: RegisterRequest): UserResponse
+  }
+
+  class AuthService {
+    - userRepository: UserRepository
+    - passwordHasher: PasswordHasher
+    - jwtService: JwtService
+    - refreshTokenService: RefreshTokenService
+    - clock: Clock
+    - maxAttempts: int
+
+    + login(req: LoginRequest): TokenResponse
+  }
+
+  class InvitationService {
+    - userRepository: UserRepository
+    - tokenRepo: InvitationTokenRepository
+    - tokenGenerator: TokenGenerator
+    - tokenHasher: TokenHasher
+    - passwordHasher: PasswordHasher
+    - clock: Clock
+    - inviteValidityDays: int
+
+    + provisionAgent(req: ProvisionAgentRequest): void
+    + createInvite(userId: UUID, purpose: TokenPurpose): String
+    + acceptInvite(req: InviteAcceptRequest): void
+  }
+}
+
+' =========================
+' RELATIONSHIPS
+' =========================
+User "1" o-- "*" Role
+User --> UserStatus
+
+InvitationToken --> TokenPurpose
+InvitationToken --> User
+
+RegisterService --> UserRepository
+RegisterService --> Validator
+RegisterService --> PasswordHasher
+RegisterService --> Clock
+
+AuthService --> UserRepository
+AuthService --> PasswordHasher
+AuthService --> JwtService
+AuthService --> RefreshTokenService
+AuthService --> Clock
+
+InvitationService --> UserRepository
+InvitationService --> InvitationTokenRepository
+InvitationService --> TokenGenerator
+InvitationService --> TokenHasher
+InvitationService --> PasswordHasher
+InvitationService --> Clock
+
+' =========================
+' NOTES
+' =========================
+note right of InvitationService
+inviteValidityDays = 7 days
+If token expired/used:
+- agent account remains DISABLED
+- admin/service must re-issue invite
+end note
+
+@enduml

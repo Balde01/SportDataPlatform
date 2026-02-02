@@ -1,0 +1,96 @@
+@startuml
+' ============================================================
+' Diagram B - Admin / Provisioning
+' Purpose: manage AGENT accounts (invite, reissue, roles, status)
+' Depends on Identity/Auth (Diagram A)
+' ============================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "model (from Auth)" {
+
+  enum Role {
+    ADMIN
+    AGENT
+    CLIENT
+  }
+
+  enum UserStatus {
+    ACTIVE
+    LOCKED
+    DISABLED
+  }
+
+  class User {
+    - id: UUID
+    - email: String
+    - roles: Set<Role>
+    - status: UserStatus
+  }
+}
+
+package "dto" {
+  class ProvisionAgentRequest {
+    + email: String
+  }
+
+  class ReissueInviteRequest {
+    + email: String
+  }
+
+  class UpdateRolesRequest {
+    + email: String
+    + roles: Set<Role>
+  }
+}
+
+package "repository (from Auth)" {
+  interface UserRepository {
+    + findByEmail(email: String): User
+    + save(user: User): void
+  }
+}
+
+package "service" {
+
+  class UserManagementService {
+    - userRepository: UserRepository
+    - invitationService: InvitationService
+    - authorizationService: AuthorizationService
+
+    + provisionAgent(req: ProvisionAgentRequest, actor: User): void
+    + reissueAgentInvite(req: ReissueInviteRequest, actor: User): void
+    + updateRoles(req: UpdateRolesRequest, actor: User): void
+    + disableUser(email: String, actor: User): void
+    + enableUser(email: String, actor: User): void
+  }
+
+  class AuthorizationService {
+    + requireRole(user: User, role: Role): void
+    + requireAnyRole(user: User, roles: Set<Role>): void
+  }
+
+  ' referenced from Diagram A
+  class InvitationService {
+    + provisionAgent(req: ProvisionAgentRequest): void
+    + reissueInvite(email: String): void
+  }
+}
+
+' =========================
+' Dependencies
+' =========================
+UserManagementService ..> UserRepository
+UserManagementService ..> InvitationService
+UserManagementService ..> AuthorizationService
+UserManagementService ..> ProvisionAgentRequest
+UserManagementService ..> ReissueInviteRequest
+UserManagementService ..> UpdateRolesRequest
+
+AuthorizationService ..> User
+AuthorizationService ..> Role
+
+@enduml

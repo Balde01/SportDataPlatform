@@ -1,0 +1,30 @@
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Java build output =====
+bin/
+out/
+target/
+*.class
+
+# ===== Gradle =====
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===== IntelliJ / VS Code =====
+.idea/
+*.iml
+.vscode/
+
+# ===== Eclipse =====
+.project
+.classpath
+.settings/
+
+# ===== Logs =====
+*.log
+
+# ===== Secrets / env =====
+.env

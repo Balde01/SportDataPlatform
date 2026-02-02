@@ -1,0 +1,40 @@
+@startuml
+' ============================================================
+' FINAL OVERVIEW (Readable)
+' Shows the 3 subsystems and the business flow, without spaghetti dependencies.
+' ============================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "A) Identity / Auth (MVP)" as A {
+  [User & Roles]
+  [Register CLIENT]
+  [Invite/Reset Password]
+  [Login + Tokens]
+}
+
+package "B) Admin / Provisioning" as B {
+  [Accept/Provision Agent]
+  [Reissue Invite]
+  [Update Roles]
+  [Enable/Disable User]
+}
+
+package "C) Governance / Audit" as C {
+  [Audit Log]
+  [Root Admin Bootstrap]
+}
+
+' ---- Clean, few arrows
+B --> A : uses invitation & identity
+C --> B : logs admin actions
+C --> A : bootstraps root admin (initial)
+
+' ---- Business flow (optional)
+[Register CLIENT] ..> [Login + Tokens] : client login
+[Accept/Provision Agent] ..> [Invite/Reset Password] : invite (7 days)
+
+@enduml
