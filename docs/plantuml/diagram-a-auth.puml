@@ -1,6 +1,6 @@
 @startuml
 ' ============================================================
-' SportDataAuth - AUTH / IDENTITY (MVP ONLY)
+' SportDataAuth - AUTH / IDENTITY (MVP ONLY) - UPGRADED
 ' Goal: accounts + registration + agent activation + login tokens
 ' No audit, no admin governance, no data collection domain.
 ' All timestamps use LocalDateTime.
@@ -13,22 +13,22 @@ skinparam classAttributeIconSize 0
 ' =========================
 package "com.sportdataauth.model" {
 
-  enum Role {
-    AGENT
-    CLIENT
-    ADMIN
-  }
+ enum Role {
+   AGENT
+   CLIENT
+   ADMIN
+ }
 
-  enum UserStatus {
-    ACTIVE
-    LOCKED
-    DISABLED
-  }
+ enum UserStatus {
+   ACTIVE
+   LOCKED
+   DISABLED
+ }
 
-  enum TokenPurpose {
-    FIRST_PASSWORD_SET
-    PASSWORD_RESET
-  }
+ enum TokenPurpose {
+   FIRST_PASSWORD_SET
+   PASSWORD_RESET
+ }
 }
 
 ' =========================
@@ -36,32 +36,32 @@ package "com.sportdataauth.model" {
 ' =========================
 package "com.sportdataauth.model" {
 
-  class User {
-    - id: UUID
-    - email: String
-    - passwordHash: String
-    - roles: Set<Role>
-    - status: UserStatus
-    - failedAttempts: int
-    - createdAt: LocalDateTime
-    - lastLoginAt: LocalDateTime
+ class User {
+   - id: UUID
+   - email: String
+   - passwordHash: String
+   - roles: Set<Role>
+   - status: UserStatus
+   - failedAttempts: int
+   - createdAt: LocalDateTime
+   - lastLoginAt: LocalDateTime
 
-    + hasRole(role: Role): boolean
-    + isActive(): boolean
-  }
+   + hasRole(role: Role): boolean
+   + isActive(): boolean
+ }
 
-  class InvitationToken {
-    - id: UUID
-    - userId: UUID
-    - tokenHash: String
-    - purpose: TokenPurpose
-    - expiresAt: LocalDateTime
-    - usedAt: LocalDateTime
-    - createdAt: LocalDateTime
+ class InvitationToken {
+   - id: UUID
+   - userId: UUID
+   - tokenHash: String
+   - purpose: TokenPurpose
+   - expiresAt: LocalDateTime
+   - usedAt: LocalDateTime
+   - createdAt: LocalDateTime
 
-    + isExpired(now: LocalDateTime): boolean
-    + isUsed(): boolean
-  }
+   + isExpired(now: LocalDateTime): boolean
+   + isUsed(): boolean
+ }
 }
 
 ' =========================
@@ -69,38 +69,38 @@ package "com.sportdataauth.model" {
 ' =========================
 package "com.sportdataauth.dto" {
 
-  class RegisterRequest {
-    + email: String
-    + password: String
-  }
+ class RegisterRequest {
+   + email: String
+   + password: String
+ }
 
-  class LoginRequest {
-    + email: String
-    + password: String
-  }
+ class LoginRequest {
+   + email: String
+   + password: String
+ }
 
-  class ProvisionAgentRequest {
-    + email: String
-  }
+ class ProvisionAgentRequest {
+   + email: String
+ }
 
-  class InviteAcceptRequest {
-    + token: String
-    + newPassword: String
-  }
+ class InviteAcceptRequest {
+   + token: String
+   + newPassword: String
+ }
 
-  class TokenResponse {
-    + accessToken: String
-    + refreshToken: String
-    + expiresAt: LocalDateTime
-  }
+ class TokenResponse {
+   + accessToken: String
+   + refreshToken: String
+   + expiresAt: LocalDateTime
+ }
 
-  class UserResponse {
-    + id: UUID
-    + email: String
-    + roles: Set<Role>
-    + status: UserStatus
-    + createdAt: LocalDateTime
-  }
+ class UserResponse {
+   + id: UUID
+   + email: String
+   + roles: Set<Role>
+   + status: UserStatus
+   + createdAt: LocalDateTime
+ }
 }
 
 ' =========================
@@ -108,17 +108,17 @@ package "com.sportdataauth.dto" {
 ' =========================
 package "com.sportdataauth.repository" {
 
-  interface UserRepository {
-    + findByEmail(email: String): User
-    + findById(id: UUID): User
-    + save(user: User): void
-  }
+ interface UserRepository {
+   + findByEmail(email: String): User
+   + findById(id: UUID): User
+   + save(user: User): void
+ }
 
-  interface InvitationTokenRepository {
-    + findValidByTokenHash(tokenHash: String, now: LocalDateTime): InvitationToken
-    + save(token: InvitationToken): void
-    + markUsed(tokenId: UUID, usedAt: LocalDateTime): void
-  }
+ interface InvitationTokenRepository {
+   + findValidByTokenHash(tokenHash: String, now: LocalDateTime): InvitationToken
+   + save(token: InvitationToken): void
+   + markUsed(tokenId: UUID, usedAt: LocalDateTime): void
+ }
 }
 
 ' =========================
@@ -126,94 +126,100 @@ package "com.sportdataauth.repository" {
 ' =========================
 package "com.sportdataauth.util" {
 
-  class Validator {
-    + isValidEmail(email: String): boolean
-    + isValidPassword(password: String): boolean
-  }
+ class Validator {
+   + isValidEmail(email: String): boolean
+   + isValidPassword(password: String): boolean
+ }
 
-  class TokenHasher {
-    + hash(rawToken: String): String
-  }
+ class TokenHasher {
+   + hash(rawToken: String): String
+ }
 
-  class TokenGenerator {
-    + generateToken(): String
-  }
+ class TokenGenerator {
+   + generateToken(): String
+ }
 
-  class Clock {
-    + now(): LocalDateTime
-  }
+ class Clock {
+   + now(): LocalDateTime
+ }
 }
 
 ' =========================
-' SECURITY (MVP token issuance)
+' SECURITY (UPGRADED)
+' Source of truth: JwtService returns JwtToken (token + expiresAt)
+' Refresh token lifecycle stays in RefreshTokenService
 ' =========================
 package "com.sportdataauth.security" {
 
-  class JwtService {
-    + generateAccessToken(user: User): String
-    + generateRefreshToken(user: User): String
-    + validateAccessToken(token: String): boolean
-  }
+ class JwtToken {
+   - token: String
+   - expiresAt: LocalDateTime
+   + getToken(): String
+   + getExpiresAt(): LocalDateTime
+ }
 
-  class RefreshTokenService {
-    + rotateRefreshToken(userId: UUID, refreshToken: String): String
-    + revokeAll(userId: UUID): void
-  }
+ interface JwtService {
+   + generateAccessToken(user: User): JwtToken
+   + validateAccessToken(token: String): boolean
+ }
 
-  class PasswordHasher {
-    + hash(rawPassword: String): String
-    + matches(rawPassword: String, passwordHash: String): boolean
-  }
+ interface RefreshTokenService {
+   + rotateRefreshToken(userId: UUID): String
+   + validateRefreshToken(refreshToken: String): UUID
+   + revoke(refreshToken: String): void
+   + revokeAll(userId: UUID): void
+ }
+
+ interface PasswordHasher {
+   + hash(rawPassword: String): String
+   + matches(rawPassword: String, passwordHash: String): boolean
+ }
 }
-
 ' =========================
 ' SERVICES (AUTH MVP)
 ' =========================
 package "com.sportdataauth.service" {
 
-  class RegisterService {
-    - userRepository: UserRepository
-    - validator: Validator
-    - passwordHasher: PasswordHasher
-    - clock: Clock
+ class RegisterService {
+   - userRepository: UserRepository
+   - validator: Validator
+   - passwordHasher: PasswordHasher
+   - clock: Clock
 
-    + registerClient(req: RegisterRequest): UserResponse
-  }
+   + registerClient(req: RegisterRequest): UserResponse
+ }
 
-  class AuthService {
-    - userRepository: UserRepository
-    - passwordHasher: PasswordHasher
-    - jwtService: JwtService
-    - refreshTokenService: RefreshTokenService
-    - clock: Clock
-    - maxAttempts: int
+ class AuthService {
+   - userRepository: UserRepository
+   - passwordHasher: PasswordHasher
+   - jwtService: JwtService
+   - refreshTokenService: RefreshTokenService
+   - clock: Clock
+   - maxAttempts: int
 
-    + login(req: LoginRequest): TokenResponse
-  }
+   + login(req: LoginRequest): TokenResponse
+ }
 
-  class InvitationService {
-    - userRepository: UserRepository
-    - tokenRepo: InvitationTokenRepository
-    - tokenGenerator: TokenGenerator
-    - tokenHasher: TokenHasher
-    - passwordHasher: PasswordHasher
-    - clock: Clock
-    - inviteValidityDays: int
+ class InvitationService {
+   - userRepository: UserRepository
+   - tokenRepo: InvitationTokenRepository
+   - tokenGenerator: TokenGenerator
+   - tokenHasher: TokenHasher
+   - passwordHasher: PasswordHasher
+   - clock: Clock
+   - inviteValidityDays: int
 
-    + provisionAgent(req: ProvisionAgentRequest): void
-    + createInvite(userId: UUID, purpose: TokenPurpose): String
-    + acceptInvite(req: InviteAcceptRequest): void
-  }
+   + provisionAgent(req: ProvisionAgentRequest): void
+   + createInvite(userId: UUID, purpose: TokenPurpose): String
+   + acceptInvite(req: InviteAcceptRequest): void
+ }
 }
 
 ' =========================
-' RELATIONSHIPS
+' RELATIONSHIPS (minimal to keep it readable)
 ' =========================
-User "1" o-- "*" Role
 User --> UserStatus
-
 InvitationToken --> TokenPurpose
-InvitationToken --> User
 
 RegisterService --> UserRepository
 RegisterService --> Validator
@@ -225,6 +231,8 @@ AuthService --> PasswordHasher
 AuthService --> JwtService
 AuthService --> RefreshTokenService
 AuthService --> Clock
+
+JwtService --> JwtToken
 
 InvitationService --> UserRepository
 InvitationService --> InvitationTokenRepository

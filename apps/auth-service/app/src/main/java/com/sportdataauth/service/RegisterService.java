@@ -1,12 +1,13 @@
 package com.sportdataauth.service;
-
-import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
-import org.mindrot.jbcrypt.BCrypt;
 
 import com.sportdataauth.dto.RegisterRequest;
+import com.sportdataauth.dto.UserResponse;
+import com.sportdataauth.model.Role;
 import com.sportdataauth.model.User;
+import com.sportdataauth.model.UserStatus;
 import com.sportdataauth.repository.UserRepository;
 import com.sportdataauth.security.PasswordHasher;
 import com.sportdataauth.util.Clock;
@@ -27,10 +28,18 @@ public class RegisterService {
 		this.clock = clock;
 	}
     
-    public void register(RegisterRequest registerRequest) throws Exception {
+    public UserResponse registerClient(RegisterRequest registerRequest) throws Exception {
 		// Validate input
-		validator.isValidEmail(registerRequest.getEmail());
-		validator.isValidPassword(registerRequest.getPassword());
+		boolean isValidEmailResponse =validator.isValidEmail(registerRequest.getEmail());
+		boolean isValidPasswordResponse = validator.isValidPassword(registerRequest.getPassword());
+		
+		if (!isValidEmailResponse) {
+			throw new Exception("Invalid email format");
+		}
+		
+		if (!isValidPasswordResponse) {
+			throw new Exception("Invalid password format");
+		}
 		
 		// Check if user already exists
 		if (userRepository.findByEmail(registerRequest.getEmail()) != null) {
@@ -48,8 +57,8 @@ public class RegisterService {
 				userId,
 				registerRequest.getEmail(),
 				hashedPassword,
-				null, // roles
-				null, // status
+				Set.of(Role.CLIENT), // roles
+				UserStatus.ACTIVE, // status
 				0,    // failedAttempts
 				clock.now(),
 				null  // lastLoginAt
@@ -58,5 +67,6 @@ public class RegisterService {
 		
 		// Save user to repository
 		userRepository.save(newUser);
+		return new UserResponse(newUser.getId(), newUser.getEmail(), newUser.getRoles(), newUser.getStatus(), newUser.getCreatedAt());
 	}
 }

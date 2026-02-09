@@ -12,7 +12,8 @@ public class InviteAcceptRequest {
 	public String getNewPassword() {
 		return newPassword;
 	}
-	public void setNewPassword(String newPassword) {
-		this.newPassword = newPassword;
+
+	public String getToken() {
+		return token;
 	}
 }
