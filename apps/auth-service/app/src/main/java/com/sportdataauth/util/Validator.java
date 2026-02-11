@@ -10,11 +10,12 @@ public class Validator {
     private static final Pattern PASSWORD_PATTERN =
             Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$");
 
-    public static boolean isValidEmail(String email) {
+    public boolean isValidEmail(String email) {
+        email = email.toLowerCase().trim();
         return email != null && EMAIL_PATTERN.matcher(email).matches();
     }
 
-    public static boolean isValidPassword(String password) {
+    public boolean isValidPassword(String password) {
         return password != null && PASSWORD_PATTERN.matcher(password).matches();
     }
 }

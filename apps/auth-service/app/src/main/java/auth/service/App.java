@@ -10,13 +10,5 @@ public class App {
 
     public static void main(String[] args) {
         System.out.println(new App().getGreeting());
-        byte[] randomBytes = new byte[32];
-        for (int i = 0; i < randomBytes.length; i++) {
-            System.out.printf("%02x", randomBytes[i]);
-            // Count the number of bytes printed and add a newline after every 16 bytes for better readability
-            if ((i + 1) % 16 == 0) {
-                System.out.println();
-            }
-        }
     }
 }

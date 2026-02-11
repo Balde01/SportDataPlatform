@@ -140,7 +140,7 @@ package "com.sportdataauth.util" {
    + generateToken(): String
  }
 
- class Clock {
+ interface Clock {
    + now(): LocalDateTime
  }
 }
