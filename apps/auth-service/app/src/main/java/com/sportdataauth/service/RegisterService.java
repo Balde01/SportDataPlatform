@@ -2,7 +2,6 @@ package com.sportdataauth.service;
 import java.util.Set;
 import java.util.UUID;
 
-
 import com.sportdataauth.dto.RegisterRequest;
 import com.sportdataauth.dto.UserResponse;
 import com.sportdataauth.model.Role;
@@ -28,45 +27,36 @@ public class RegisterService {
 		this.clock = clock;
 	}
     
-    public UserResponse registerClient(RegisterRequest registerRequest) throws Exception {
-		// Validate input
-		boolean isValidEmailResponse =validator.isValidEmail(registerRequest.getEmail());
-		boolean isValidPasswordResponse = validator.isValidPassword(registerRequest.getPassword());
-		
-		if (!isValidEmailResponse) {
-			throw new Exception("Invalid email format");
+    public UserResponse registerClient(RegisterRequest req) {
+		String email = req.getEmail().trim().toLowerCase();
+		String password = req.getPassword();
+		if (!validator.isValidEmail(email)) {
+			throw new IllegalArgumentException("INVALID_EMAIL");
 		}
-		
-		if (!isValidPasswordResponse) {
-			throw new Exception("Invalid password format");
+		if (!validator.isValidPassword(password)) {
+			throw new IllegalArgumentException("WEAK_PASSWORD");
 		}
-		
-		// Check if user already exists
-		if (userRepository.findByEmail(registerRequest.getEmail()) != null) {
-			throw new Exception("User with this email already exists");
+		if (userRepository.findByEmail(email) != null) {
+			throw new IllegalStateException("EMAIL_ALREADY_EXISTS");
 		}
-		
-		// Hash password
-		String hashedPassword = passwordHasher.hash(registerRequest.getPassword());
-		
-		// Generate user ID
-		UUID userId = java.util.UUID.randomUUID();
-		
-		// Create new user
+		String hashedPassword = passwordHasher.hash(password);
 		User newUser = new User(
-				userId,
-				registerRequest.getEmail(),
-				hashedPassword,
-				Set.of(Role.CLIENT), // roles
-				UserStatus.ACTIVE, // status
-				0,    // failedAttempts
-				clock.now(),
-				null  // lastLoginAt
+			UUID.randomUUID(),
+			email,
+			hashedPassword,
+			Set.of(Role.CLIENT),
+			UserStatus.ACTIVE,
+			0,
+			clock.now(),
+			null
 		);
-
-		
-		// Save user to repository
 		userRepository.save(newUser);
-		return new UserResponse(newUser.getId(), newUser.getEmail(), newUser.getRoles(), newUser.getStatus(), newUser.getCreatedAt());
+		return new UserResponse(
+			newUser.getId(),
+			newUser.getEmail(),
+			newUser.getRoles(),
+			newUser.getStatus(),
+			newUser.getCreatedAt()
+		);
 	}
 }

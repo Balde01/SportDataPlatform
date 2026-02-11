@@ -209,7 +209,7 @@ package "com.sportdataauth.service" {
    - clock: Clock
    - inviteValidityDays: int
 
-   + provisionAgent(req: ProvisionAgentRequest): void
+   + provisionAgent(req: ProvisionAgentRequest): String
    + createInvite(userId: UUID, purpose: TokenPurpose): String
    + acceptInvite(req: InviteAcceptRequest): void
  }
