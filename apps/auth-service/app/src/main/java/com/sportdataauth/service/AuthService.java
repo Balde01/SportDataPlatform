@@ -36,19 +36,19 @@ public class AuthService {
 		User user = userRepository.findByEmail(loginRequest.getEmail());
 
 		if (user == null){
-			throw new AuthenticationException("Invalid email or password");
+			throw new AuthenticationException("INVALID_EMAIL_OR_PASSWORD");
 		}
 
 		if (user.getStatus() == UserStatus.LOCKED) {
-			throw new AuthenticationException("User account is locked");
+			throw new AuthenticationException("USER_ACCOUNT_LOCKED");
 		}
 
 		if (user.getStatus() == UserStatus.DISABLED) {
-			throw new AuthenticationException("User account is disabled");
+			throw new AuthenticationException("USER_ACCOUNT_DISABLED");
 		}
 
 		if (user.getPasswordHash() == null) {
-			throw new AuthenticationException("User has not set a password");
+			throw new AuthenticationException("USER_HAS_NO_PASSWORD");
 		}
 
 		boolean passwordMatches = passwordHasher.matches(loginRequest.getPassword(), user.getPasswordHash());
@@ -58,7 +58,7 @@ public class AuthService {
 				user.setStatus(UserStatus.LOCKED);
 			}
 			userRepository.save(user);
-			throw new AuthenticationException("Invalid email or password");
+			throw new AuthenticationException("INVALID_EMAIL_OR_PASSWORD");
 		}
 		// Reset failed attempts on successful login
 		user.setFailedAttempts(0);

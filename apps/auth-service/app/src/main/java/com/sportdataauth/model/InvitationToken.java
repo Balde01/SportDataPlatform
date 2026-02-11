@@ -17,15 +17,15 @@ public class InvitationToken {
                           LocalDateTime expiresAt,
                           LocalDateTime usedAt,
                           LocalDateTime createdAt) {
-this.id = Objects.requireNonNull(id, "id is required");
-       this.userId = Objects.requireNonNull(userId, "userId is required");
-       this.tokenHash = Objects.requireNonNull(tokenHash, "tokenHash is required");
-       this.purpose = Objects.requireNonNull(purpose, "purpose is required");
-       this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt is required");
-       this.createdAt = Objects.requireNonNull(createdAt, "createdAt is required");
+       this.id = Objects.requireNonNull(id, "ID_IS_REQUIRED");
+       this.userId = Objects.requireNonNull(userId, "USER_ID_IS_REQUIRED");
+       this.tokenHash = Objects.requireNonNull(tokenHash, "TOKEN_HASH_IS_REQUIRED");
+       this.purpose = Objects.requireNonNull(purpose, "PURPOSE_IS_REQUIRED");
+       this.expiresAt = Objects.requireNonNull(expiresAt, "EXPIRES_AT_IS_REQUIRED");
+       this.createdAt = Objects.requireNonNull(createdAt, "CREATED_AT_IS_REQUIRED");
        // Invariants simples
        if (!expiresAt.isAfter(createdAt)) {
-           throw new IllegalArgumentException("expiresAt must be after createdAt");
+           throw new IllegalArgumentException("EXPIRES_AT_MUST_BE_AFTER_CREATED_AT");
        }
        this.usedAt = usedAt;
    }

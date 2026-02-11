@@ -20,14 +20,14 @@ public class User {
                int failedAttempts,
                LocalDateTime createdAt,
                LocalDateTime lastLoginAt) {
-this.id = Objects.requireNonNull(id, "id is required");
-       this.email = requireNonBlank(email, "email is required");
-       this.roles = Objects.requireNonNull(roles, "roles is required");
-       this.status = Objects.requireNonNull(status, "status is required");
-       if (failedAttempts < 0) throw new IllegalArgumentException("failedAttempts must be >= 0");
+       this.id = Objects.requireNonNull(id, "ID_IS_REQUIRED");
+       this.email = requireNonBlank(email, "EMAIL_IS_REQUIRED");
+       this.roles = Objects.requireNonNull(roles, "ROLES_IS_REQUIRED");
+       this.status = Objects.requireNonNull(status, "STATUS_IS_REQUIRED");
+       if (failedAttempts < 0) throw new IllegalArgumentException("FAILED_ATTEMPTS_MUST_BE_GREATER_OR_EQUAL_TO_ZERO");
        this.passwordHash = passwordHash;
        this.failedAttempts = failedAttempts;
-       this.createdAt = Objects.requireNonNull(createdAt, "createdAt is required");
+       this.createdAt = Objects.requireNonNull(createdAt, "CREATED_AT_IS_REQUIRED");
        this.lastLoginAt = lastLoginAt;
    }
    public boolean hasRole(Role role) {
@@ -48,7 +48,7 @@ this.id = Objects.requireNonNull(id, "id is required");
    public void setRoles(Set<Role> roles) { this.roles = Objects.requireNonNull(roles); }
    public void setStatus(UserStatus status) { this.status = Objects.requireNonNull(status); }
    public void setFailedAttempts(int failedAttempts) {
-       if (failedAttempts < 0) throw new IllegalArgumentException("failedAttempts must be >= 0");
+       if (failedAttempts < 0) throw new IllegalArgumentException("FAILED_ATTEMPTS_MUST_BE_GREATER_OR_EQUAL_TO_ZERO");
        this.failedAttempts = failedAttempts;
    }
    public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }

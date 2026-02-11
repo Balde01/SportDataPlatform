@@ -17,6 +17,7 @@ import com.sportdataauth.security.PasswordHasher;
 import com.sportdataauth.util.Clock;
 import com.sportdataauth.util.TokenGenerator;
 import com.sportdataauth.util.TokenHasher;
+import com.sportdataauth.util.Validator;
 
 public class InvitationService {
 
@@ -25,6 +26,7 @@ public class InvitationService {
    private final TokenGenerator tokenGenerator;
    private final TokenHasher tokenHasher;
    private final PasswordHasher passwordHasher;
+   private final Validator validator;
    private final Clock clock;
    private final int inviteValidDays;
 
@@ -33,6 +35,7 @@ public class InvitationService {
                             TokenGenerator tokenGenerator,
                             TokenHasher tokenHasher,
                             PasswordHasher passwordHasher,
+                            Validator validator,
                             Clock clock,
                             int inviteValidDays) {
        this.userRepository = userRepository;
@@ -40,6 +43,7 @@ public class InvitationService {
        this.tokenGenerator = tokenGenerator;
        this.tokenHasher = tokenHasher;
        this.passwordHasher = passwordHasher;
+       this.validator = validator;
        this.clock = clock;
        this.inviteValidDays = inviteValidDays;
    }
@@ -129,7 +133,12 @@ public class InvitationService {
            throw new IllegalStateException("USER_NOT_ELIGIBLE_FOR_ACTIVATION");
        }
 
-       String newHashedPassword = passwordHasher.hash(request.getNewPassword());
+       // In a more complex scenario we might have different flows based on TokenPurpose (e.g. password reset vs account activation)
+       String newPassword = request.getNewPassword();
+       if (!validator.isValidPassword(newPassword)) {
+           throw new IllegalArgumentException("WEAK_PASSWORD");
+       }
+       String newHashedPassword = passwordHasher.hash(newPassword);
 
        user.setPasswordHash(newHashedPassword);
        user.setStatus(UserStatus.ACTIVE);

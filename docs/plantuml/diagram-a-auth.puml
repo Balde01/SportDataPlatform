@@ -136,6 +136,7 @@ package "com.sportdataauth.util" {
  }
 
  class TokenGenerator {
+   - secureRandom : SecureRandom
    + generateToken(): String
  }
 
@@ -205,6 +206,7 @@ package "com.sportdataauth.service" {
    - tokenRepo: InvitationTokenRepository
    - tokenGenerator: TokenGenerator
    - tokenHasher: TokenHasher
+   - validator : Validator
    - passwordHasher: PasswordHasher
    - clock: Clock
    - inviteValidityDays: int
