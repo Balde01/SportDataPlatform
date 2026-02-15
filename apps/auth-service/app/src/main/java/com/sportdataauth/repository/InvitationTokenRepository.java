@@ -4,7 +4,7 @@ package com.sportdataauth.repository;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.sportdataauth.model.InvitationToken;
+import com.sportdataauth.domain.entity.InvitationToken;
 
 public interface InvitationTokenRepository {
 	InvitationToken findValidByTokenHash(String tokenHash, LocalDateTime now);

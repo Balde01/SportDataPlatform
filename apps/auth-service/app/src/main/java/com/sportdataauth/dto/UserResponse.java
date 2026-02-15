@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
-import com.sportdataauth.model.Role;
-import com.sportdataauth.model.UserStatus;
+import com.sportdataauth.domain.enums.Role;
+import com.sportdataauth.domain.enums.UserStatus;
 
 public class UserResponse {
 	private UUID id;

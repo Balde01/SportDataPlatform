@@ -4,15 +4,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.sportdataauth.model.User;
+import com.sportdataauth.domain.entity.User;
+import com.sportdataauth.domain.value.Email;
 
 public class InMemoryUserRepository implements UserRepository {
 
     private final Map<UUID, User> byId = new HashMap<>();
-    private final Map<String, UUID> idByEmail = new HashMap<>();
+    private final Map<Email, UUID> idByEmail = new HashMap<>();
 
     @Override
-    public User findByEmail(String email) {
+    public User findByEmail(Email email) {
+        if (email == null) {
+            throw new IllegalArgumentException("INVALID_REQUEST");
+        }
         UUID id = idByEmail.get(email);
         if (id == null) {
             return null;
@@ -22,6 +26,9 @@ public class InMemoryUserRepository implements UserRepository {
 
     @Override
     public User findById(UUID id) {
+        if (id == null) {
+            throw new IllegalArgumentException("INVALID_REQUEST");
+        }
         byId.get(id);
         return byId.get(id);
     }

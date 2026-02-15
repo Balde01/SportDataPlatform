@@ -5,8 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.sportdataauth.model.InvitationToken;
-import com.sportdataauth.util.SystemClock;
+import com.sportdataauth.domain.entity.InvitationToken;
 
 public class InMemoryInvitationTokenRepository implements InvitationTokenRepository {
 

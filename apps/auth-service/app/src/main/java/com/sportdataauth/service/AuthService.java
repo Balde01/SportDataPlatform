@@ -1,10 +1,12 @@
 package com.sportdataauth.service;
 
 import javax.security.sasl.AuthenticationException;
+
+import com.sportdataauth.domain.entity.User;
+import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.LoginRequest;
 import com.sportdataauth.dto.TokenResponse;
-import com.sportdataauth.model.User;
-import com.sportdataauth.model.UserStatus;
 import com.sportdataauth.repository.UserRepository;
 import com.sportdataauth.security.JwtService;
 import com.sportdataauth.security.JwtToken;
@@ -33,7 +35,8 @@ public class AuthService {
 	}
 
 	public TokenResponse login(LoginRequest loginRequest) throws AuthenticationException {
-		User user = userRepository.findByEmail(loginRequest.getEmail());
+		Email email = Email.of(loginRequest.getEmail());
+		User user = userRepository.findByEmail(email);
 
 		if (user == null){
 			throw new AuthenticationException("INVALID_EMAIL_OR_PASSWORD");

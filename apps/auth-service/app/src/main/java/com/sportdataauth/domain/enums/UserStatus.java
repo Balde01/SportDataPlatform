@@ -1,4 +1,4 @@
-package com.sportdataauth.model;
+package com.sportdataauth.domain.enums;
 
 public enum UserStatus {
     ACTIVE,

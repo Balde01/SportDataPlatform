@@ -1,17 +1,25 @@
 @startuml
 ' ============================================================
-' SportDataAuth - AUTH / IDENTITY (MVP ONLY) - UPGRADED
-' Goal: accounts + registration + agent activation + login tokens
-' No audit, no admin governance, no data collection domain.
-' All timestamps use LocalDateTime.
+' SportDataAuth - AUTH / IDENTITY (MVP ONLY)
+' Goal:
+' - accounts (client register)
+' - agent provisioning + first password set via invitation token
+' - login + access token (JwtToken) + refresh token rotation
+'
+' Notes:
+' - DTOs use String for inputs/outputs (boundary layer)
+' - Domain uses Email value object for canonical storage and lookup
+' - CredentialPolicy is the single place for email/password acceptance rules
+' - JwtService returns JwtToken as source of truth for expiresAt
+' - All timestamps use LocalDateTime (via Clock)
 ' ============================================================
 
 skinparam classAttributeIconSize 0
 
 ' =========================
-' ENUMS
+' DOMAIN ENUMS
 ' =========================
-package "com.sportdataauth.model" {
+package "com.sportdataauth.domain.enum" {
 
  enum Role {
    AGENT
@@ -32,13 +40,28 @@ package "com.sportdataauth.model" {
 }
 
 ' =========================
-' ENTITIES / MODELS
+' DOMAIN VALUE OBJECTS
 ' =========================
-package "com.sportdataauth.model" {
+package "com.sportdataauth.domain.value" {
+
+ class Email {
+   - value: String
+   {static} + of(raw: String): Email
+   + value(): String
+   + toString(): String
+   + equals(o: Object): boolean
+   + hashCode(): int
+ }
+}
+
+' =========================
+' DOMAIN ENTITIES
+' =========================
+package "com.sportdataauth.domain.entity" {
 
  class User {
    - id: UUID
-   - email: String
+   - email: Email
    - passwordHash: String
    - roles: Set<Role>
    - status: UserStatus
@@ -65,7 +88,7 @@ package "com.sportdataauth.model" {
 }
 
 ' =========================
-' DTOs
+' DTOs (boundary)
 ' =========================
 package "com.sportdataauth.dto" {
 
@@ -109,7 +132,7 @@ package "com.sportdataauth.dto" {
 package "com.sportdataauth.repository" {
 
  interface UserRepository {
-   + findByEmail(email: String): User
+   + findByEmail(email: Email): User
    + findById(id: UUID): User
    + save(user: User): void
  }
@@ -122,21 +145,27 @@ package "com.sportdataauth.repository" {
 }
 
 ' =========================
-' UTIL
+' POLICY (business acceptance rules)
+' =========================
+package "com.sportdataauth.policy" {
+
+ interface CredentialPolicy {
+   + isEmailAllowed(email: String): boolean
+   + isPasswordStrong(password: String): boolean
+ }
+}
+
+' =========================
+' UTIL (technical helpers)
 ' =========================
 package "com.sportdataauth.util" {
-
- class Validator {
-   + isValidEmail(email: String): boolean
-   + isValidPassword(password: String): boolean
- }
 
  class TokenHasher {
    + hash(rawToken: String): String
  }
 
  class TokenGenerator {
-   - secureRandom : SecureRandom
+   - secureRandom: SecureRandom
    + generateToken(): String
  }
 
@@ -146,9 +175,7 @@ package "com.sportdataauth.util" {
 }
 
 ' =========================
-' SECURITY (UPGRADED)
-' Source of truth: JwtService returns JwtToken (token + expiresAt)
-' Refresh token lifecycle stays in RefreshTokenService
+' SECURITY (token issuance)
 ' =========================
 package "com.sportdataauth.security" {
 
@@ -176,14 +203,15 @@ package "com.sportdataauth.security" {
    + matches(rawPassword: String, passwordHash: String): boolean
  }
 }
+
 ' =========================
-' SERVICES (AUTH MVP)
+' SERVICES (orchestration)
 ' =========================
 package "com.sportdataauth.service" {
 
  class RegisterService {
    - userRepository: UserRepository
-   - validator: Validator
+   - credentialPolicy: CredentialPolicy
    - passwordHasher: PasswordHasher
    - clock: Clock
 
@@ -206,7 +234,7 @@ package "com.sportdataauth.service" {
    - tokenRepo: InvitationTokenRepository
    - tokenGenerator: TokenGenerator
    - tokenHasher: TokenHasher
-   - validator : Validator
+   - credentialPolicy: CredentialPolicy
    - passwordHasher: PasswordHasher
    - clock: Clock
    - inviteValidityDays: int
@@ -218,13 +246,16 @@ package "com.sportdataauth.service" {
 }
 
 ' =========================
-' RELATIONSHIPS (minimal to keep it readable)
+' RELATIONSHIPS (minimal)
 ' =========================
+User --> Email
 User --> UserStatus
 InvitationToken --> TokenPurpose
 
+JwtService --> JwtToken
+
 RegisterService --> UserRepository
-RegisterService --> Validator
+RegisterService --> CredentialPolicy
 RegisterService --> PasswordHasher
 RegisterService --> Clock
 
@@ -234,23 +265,19 @@ AuthService --> JwtService
 AuthService --> RefreshTokenService
 AuthService --> Clock
 
-JwtService --> JwtToken
-
 InvitationService --> UserRepository
 InvitationService --> InvitationTokenRepository
 InvitationService --> TokenGenerator
 InvitationService --> TokenHasher
+InvitationService --> CredentialPolicy
 InvitationService --> PasswordHasher
 InvitationService --> Clock
 
-' =========================
-' NOTES
-' =========================
 note right of InvitationService
 inviteValidityDays = 7 days
 If token expired/used:
 - agent account remains DISABLED
-- admin/service must re-issue invite
+- service must re-issue invite
 end note
 
 @enduml

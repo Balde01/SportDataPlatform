@@ -4,20 +4,21 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
+import com.sportdataauth.domain.entity.InvitationToken;
+import com.sportdataauth.domain.entity.User;
+import com.sportdataauth.domain.enums.Role;
+import com.sportdataauth.domain.enums.TokenPurpose;
+import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.InviteAcceptRequest;
 import com.sportdataauth.dto.ProvisionAgentRequest;
-import com.sportdataauth.model.InvitationToken;
-import com.sportdataauth.model.Role;
-import com.sportdataauth.model.TokenPurpose;
-import com.sportdataauth.model.User;
-import com.sportdataauth.model.UserStatus;
+import com.sportdataauth.policy.CredentialPolicy;
 import com.sportdataauth.repository.InvitationTokenRepository;
 import com.sportdataauth.repository.UserRepository;
 import com.sportdataauth.security.PasswordHasher;
 import com.sportdataauth.util.Clock;
 import com.sportdataauth.util.TokenGenerator;
 import com.sportdataauth.util.TokenHasher;
-import com.sportdataauth.util.Validator;
 
 public class InvitationService {
 
@@ -26,7 +27,7 @@ public class InvitationService {
    private final TokenGenerator tokenGenerator;
    private final TokenHasher tokenHasher;
    private final PasswordHasher passwordHasher;
-   private final Validator validator;
+   private final CredentialPolicy credentialPolicy;
    private final Clock clock;
    private final int inviteValidDays;
 
@@ -35,7 +36,7 @@ public class InvitationService {
                             TokenGenerator tokenGenerator,
                             TokenHasher tokenHasher,
                             PasswordHasher passwordHasher,
-                            Validator validator,
+                            CredentialPolicy credentialPolicy,
                             Clock clock,
                             int inviteValidDays) {
        this.userRepository = userRepository;
@@ -43,7 +44,7 @@ public class InvitationService {
        this.tokenGenerator = tokenGenerator;
        this.tokenHasher = tokenHasher;
        this.passwordHasher = passwordHasher;
-       this.validator = validator;
+       this.credentialPolicy = credentialPolicy;
        this.clock = clock;
        this.inviteValidDays = inviteValidDays;
    }
@@ -57,10 +58,7 @@ public class InvitationService {
            throw new IllegalArgumentException("INVALID_REQUEST");
        }
 
-	   String email = request.getEmail().trim().toLowerCase();
-       if (email.isBlank() || email==null) {
-           throw new IllegalArgumentException("INVALID_EMAIL");
-       }
+	   Email email = Email.of(request.getEmail());
 
        User user = userRepository.findByEmail(email);
 
@@ -135,7 +133,7 @@ public class InvitationService {
 
        // In a more complex scenario we might have different flows based on TokenPurpose (e.g. password reset vs account activation)
        String newPassword = request.getNewPassword();
-       if (!validator.isValidPassword(newPassword)) {
+       if (!credentialPolicy.isPasswordStrong(newPassword)) {
            throw new IllegalArgumentException("WEAK_PASSWORD");
        }
        String newHashedPassword = passwordHasher.hash(newPassword);

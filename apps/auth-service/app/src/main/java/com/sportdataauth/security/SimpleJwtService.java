@@ -1,6 +1,6 @@
 package com.sportdataauth.security;
 
-import com.sportdataauth.model.User;
+import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.util.Clock;
 import com.sportdataauth.util.TokenGenerator;
 

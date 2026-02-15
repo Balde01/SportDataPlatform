@@ -1,7 +1,9 @@
-package com.sportdataauth.model;
+package com.sportdataauth.domain.entity;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+
+import com.sportdataauth.domain.enums.TokenPurpose;
 public class InvitationToken {
    private final UUID id;
    private final UUID userId;
