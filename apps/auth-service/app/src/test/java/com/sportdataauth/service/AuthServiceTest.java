@@ -1,41 +1,153 @@
 package com.sportdataauth.service;
 
+import java.util.Set;
+import java.util.UUID;
+
+import javax.security.sasl.AuthenticationException;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.sportdataauth.domain.entity.User;
+import com.sportdataauth.domain.enums.Role;
+import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.value.Email;
+import com.sportdataauth.dto.LoginRequest;
+import com.sportdataauth.dto.RegisterRequest;
+import com.sportdataauth.policy.CredentialPolicy;
+import com.sportdataauth.policy.DefaultCredentialPolicy;
+import com.sportdataauth.repository.InMemoryUserRepository;
+import com.sportdataauth.repository.UserRepository;
+import com.sportdataauth.security.BcryptPasswordHasher;
+import com.sportdataauth.security.InMemoryRefreshTokenService;
+import com.sportdataauth.security.JwtService;
+import com.sportdataauth.security.PasswordHasher;
+import com.sportdataauth.security.RefreshTokenService;
+import com.sportdataauth.security.SimpleJwtService;
+import com.sportdataauth.util.Clock;
+import com.sportdataauth.util.SystemClock;
+import com.sportdataauth.util.TokenGenerator;
 
 public class AuthServiceTest {
 
-    @Test
-    void shouldLoginSuccesfully() {
+   private AuthService authService;
+   private RegisterService registerService;
 
-    }
+   private CredentialPolicy credentialPolicy;
+   private UserRepository userRepository;
+   private PasswordHasher passwordHasher;
+   private JwtService jwtService;
+   private RefreshTokenService refreshTokenService;
+   private TokenGenerator tokenGenerator;
+   private Clock clock;
 
-    @Test
-    void shouldFailWhenPasswordIncorrect() {
+   private final String email = "test@gmail.com";
+   private final String password = "Secret123@";
+   private final int maxFailedAttempts = 5;
 
-    }
- 
-    @Test
-    void shouldIncrementFailedAttempts() {
+   @BeforeEach
+   public void setUp() {
+       userRepository = new InMemoryUserRepository();
+       passwordHasher = new BcryptPasswordHasher();
+       tokenGenerator = new TokenGenerator();
+       clock = new SystemClock();
+       jwtService = new SimpleJwtService(tokenGenerator, clock);
+       refreshTokenService = new InMemoryRefreshTokenService();
+       credentialPolicy = new DefaultCredentialPolicy();
 
-    }   
+       authService = new AuthService(
+               userRepository,
+               passwordHasher,
+               jwtService,
+               refreshTokenService,
+               clock,
+               maxFailedAttempts
+       );
 
-    @Test
-    void shouldLockUserAfterMaxAttempts() {
+       registerService = new RegisterService(userRepository, credentialPolicy, passwordHasher, clock);
+       registerService.registerClient(new RegisterRequest(email, password));
+   }
 
-    }
-    
-    @Test
-    void shouldResetFailedAttemptsOnSucces() {
+   @Test
+   void shouldLoginSuccessfully() {
+       LoginRequest req = new LoginRequest(email, password);
+       assertDoesNotThrow(() -> authService.login(req));
+   }
 
-    }
- 
-    @Test
-    void shouldNotLoginWhenUserLocked() {
+   @Test
+   void shouldFailWhenPasswordIncorrect() {
+       LoginRequest req = new LoginRequest(email, password + "Fake");
+       assertThrows(AuthenticationException.class, () -> authService.login(req));
+   }
 
-    }
-    
-    @Test
-    void shouldNotLoginWhenUserDisabled() {
+   @Test
+   void shouldIncrementFailedAttempts() {
+       Email e = Email.of(email);
+       int before = userRepository.findByEmail(e).getFailedAttempts();
 
-    }    
+       LoginRequest req = new LoginRequest(email, password + "Fake");
+       assertThrows(AuthenticationException.class, () -> authService.login(req));
+
+       int after = userRepository.findByEmail(e).getFailedAttempts();
+       assertEquals(before + 1, after);
+   }
+
+   @Test
+   void shouldLockUserAfterMaxAttempts() {
+       for (int i = 0; i < maxFailedAttempts; i++) {
+           LoginRequest req = new LoginRequest(email, password + "Fake");
+           assertThrows(AuthenticationException.class, () -> authService.login(req));
+       }
+
+       UserStatus status = userRepository.findByEmail(Email.of(email)).getStatus();
+       assertEquals(UserStatus.LOCKED, status);
+   }
+
+   @Test
+   void shouldResetFailedAttemptsOnSuccess() {
+       for (int i = 0; i < maxFailedAttempts - 1; i++) {
+           LoginRequest req = new LoginRequest(email, password + "Fake");
+           assertThrows(AuthenticationException.class, () -> authService.login(req));
+       }
+
+       assertDoesNotThrow(() -> authService.login(new LoginRequest(email, password)));
+
+       int failedAttempts = userRepository.findByEmail(Email.of(email)).getFailedAttempts();
+       assertEquals(0, failedAttempts);
+   }
+
+   @Test
+   void shouldNotLoginWhenUserLocked() {
+       for (int i = 0; i < maxFailedAttempts; i++) {
+           LoginRequest req = new LoginRequest(email, password + "Fake");
+           assertThrows(AuthenticationException.class, () -> authService.login(req));
+       }
+
+       assertThrows(AuthenticationException.class, () -> authService.login(new LoginRequest(email, password)));
+   }
+
+   @Test
+   void shouldNotLoginWhenUserDisabled() {
+       UUID id = UUID.randomUUID();
+       Email userEmail = Email.of("disabled@gmail.com");
+
+       String hash = passwordHasher.hash(password);
+       User user = new User(
+               id,
+               userEmail,
+               hash,
+               Set.of(Role.CLIENT),
+               UserStatus.DISABLED,
+               0,
+               clock.now(),
+               null
+       );
+       userRepository.save(user);
+
+       assertThrows(AuthenticationException.class,
+               () -> authService.login(new LoginRequest("disabled@gmail.com", password)));
+   }
 }

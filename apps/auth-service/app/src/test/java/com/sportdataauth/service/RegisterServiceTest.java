@@ -65,6 +65,10 @@ RegisterRequest req = new RegisterRequest("InvalidEmail.com", "Secret1@");
    void shouldFailWhenPasswordInvalid() {
        RegisterRequest req = new RegisterRequest("test@email.com", "#####");
        assertThrows(IllegalArgumentException.class, () -> registerService.registerClient(req));
+
+       RegisterRequest req2 = new RegisterRequest("test@email.com", null);
+       assertThrows(IllegalArgumentException.class, () -> registerService.registerClient(req2));
+
        Email e = Email.of("test@email.com");
        assertNull(userRepository.findByEmail(e));
    }
