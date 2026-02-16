@@ -52,12 +52,12 @@ public class RegisterServiceTest {
 
    @Test
    void shouldFailWhenEmailInvalid() {
-RegisterRequest req = new RegisterRequest("InvalidEmail.com", "Secret1@");
+    RegisterRequest req = new RegisterRequest("InvalidEmail.com", "Secret1@");
 
     assertThrows(IllegalArgumentException.class, () -> registerService.registerClient(req));
 
     // Ensure we didn't create a user (simple sanity check)
-    assertNull(userRepository.findByEmail(Email.of("someone@email.com")));
+    assertNull(userRepository.findByEmail(Email.of("InvalidEmail.com")));
 
    }
 

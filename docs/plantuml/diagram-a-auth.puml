@@ -1,6 +1,6 @@
 @startuml
 ' ============================================================
-' SportDataAuth - AUTH / IDENTITY (MVP ONLY)
+' SportDataAuth - AUTH / IDENTITY (MVP ONLY) - UPGRADED
 ' Goal:
 ' - accounts (client register)
 ' - agent provisioning + first password set via invitation token
@@ -12,6 +12,8 @@
 ' - CredentialPolicy is the single place for email/password acceptance rules
 ' - JwtService returns JwtToken as source of truth for expiresAt
 ' - All timestamps use LocalDateTime (via Clock)
+' - Invitation token consumption is atomic at repository level (consume)
+' - TransactionRunner defines the transaction boundary (noop now, real later)
 ' ============================================================
 
 skinparam classAttributeIconSize 0
@@ -19,7 +21,7 @@ skinparam classAttributeIconSize 0
 ' =========================
 ' DOMAIN ENUMS
 ' =========================
-package "com.sportdataauth.domain.enum" {
+package "com.sportdataauth.domain.enums" {
 
  enum Role {
    AGENT
@@ -138,9 +140,11 @@ package "com.sportdataauth.repository" {
  }
 
  interface InvitationTokenRepository {
-   + findValidByTokenHash(tokenHash: String, now: LocalDateTime): InvitationToken
+   ' Atomic read+write:
+   ' - returns used token if valid
+   ' - returns null if invalid/expired/already used
+   + consumeValidByTokenHash(tokenHash: String, now: LocalDateTime): InvitationToken
    + save(token: InvitationToken): void
-   + markUsed(tokenId: UUID, usedAt: LocalDateTime): void
  }
 }
 
@@ -172,6 +176,16 @@ package "com.sportdataauth.util" {
  interface Clock {
    + now(): LocalDateTime
  }
+
+ interface TransactionRunner {
+   + runInTransaction(action: Runnable): void
+ }
+
+ class NoopTransactionRunner {
+   + runInTransaction(action: Runnable): void
+ }
+
+ TransactionRunner <|.. NoopTransactionRunner
 }
 
 ' =========================
@@ -238,6 +252,7 @@ package "com.sportdataauth.service" {
    - passwordHasher: PasswordHasher
    - clock: Clock
    - inviteValidityDays: int
+   - tx: TransactionRunner
 
    + provisionAgent(req: ProvisionAgentRequest): String
    + createInvite(userId: UUID, purpose: TokenPurpose): String
@@ -255,6 +270,40 @@ InvitationToken --> TokenPurpose
 JwtService --> JwtToken
 
 RegisterService --> UserRepository
+RegisterService --> CredentialPolicy
+RegisterService --> PasswordHasher
+RegisterService --> Clock
+
+AuthService --> UserRepository
+AuthService --> PasswordHasher
+AuthService --> JwtService
+AuthService --> RefreshTokenService
+AuthService --> Clock
+
+InvitationService --> UserRepository
+InvitationService --> InvitationTokenRepository
+InvitationService --> TokenGenerator
+InvitationService --> TokenHasher
+InvitationService --> CredentialPolicy
+InvitationService --> PasswordHasher
+InvitationService --> Clock
+InvitationService --> TransactionRunner
+
+note right of InvitationTokenRepository
+consumeValidByTokenHash(...) is atomic:
+- checks expired/used
+- sets usedAt = now
+Prevents double-use in concurrency.
+end note
+
+note right of InvitationService
+inviteValidityDays = 7 days
+If token expired/used:
+- agent account remains DISABLED
+- service must re-issue invite
+end note
+
+@endumlervice --> UserRepository
 RegisterService --> CredentialPolicy
 RegisterService --> PasswordHasher
 RegisterService --> Clock

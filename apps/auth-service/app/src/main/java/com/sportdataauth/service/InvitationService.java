@@ -19,6 +19,7 @@ import com.sportdataauth.security.PasswordHasher;
 import com.sportdataauth.util.Clock;
 import com.sportdataauth.util.TokenGenerator;
 import com.sportdataauth.util.TokenHasher;
+import com.sportdataauth.util.TransactionRunner;
 
 public class InvitationService {
 
@@ -30,6 +31,7 @@ public class InvitationService {
    private final CredentialPolicy credentialPolicy;
    private final Clock clock;
    private final int inviteValidDays;
+   private final TransactionRunner tx;
 
    public InvitationService(UserRepository userRepository,
                             InvitationTokenRepository tokenRepository,
@@ -38,7 +40,8 @@ public class InvitationService {
                             PasswordHasher passwordHasher,
                             CredentialPolicy credentialPolicy,
                             Clock clock,
-                            int inviteValidDays) {
+                            int inviteValidDays,
+                            TransactionRunner tx) {
        this.userRepository = userRepository;
        this.tokenRepository = tokenRepository;
        this.tokenGenerator = tokenGenerator;
@@ -47,6 +50,7 @@ public class InvitationService {
        this.credentialPolicy = credentialPolicy;
        this.clock = clock;
        this.inviteValidDays = inviteValidDays;
+       this.tx = tx;
    }
 
    /**
@@ -109,40 +113,42 @@ public class InvitationService {
    }
 
    public void acceptInvite(InviteAcceptRequest request) {
-       if (request == null || request.getToken() == null || request.getNewPassword() == null) {
-           throw new IllegalArgumentException("INVALID_REQUEST");
-       }
+       tx.runInTransaction(() ->{
+            if (request == null || request.getToken() == null || request.getNewPassword() == null) {
+                throw new IllegalArgumentException("INVALID_REQUEST");
+            }
 
-       String tokenHash = tokenHasher.hash(request.getToken());
-       InvitationToken inviteToken = tokenRepository.findValidByTokenHash(tokenHash, clock.now());
+            LocalDateTime now = clock.now();
 
-       if (inviteToken == null) {
-           throw new IllegalArgumentException("INVALID_OR_EXPIRED_TOKEN");
-       }
+            String tokenHash = tokenHasher.hash(request.getToken());
+            InvitationToken inviteToken = tokenRepository.consumeValidByTokenHash(tokenHash, now);
 
-       User user = userRepository.findById(inviteToken.getUserId());
-       if (user == null) {
-           throw new IllegalStateException("USER_NOT_FOUND_FOR_TOKEN");
-       }
+            if (inviteToken == null) {
+            throw new IllegalStateException("INVALID_OR_EXPIRED_TOKEN");
+            }
 
-       // For FIRST_PASSWORD_SET we expect the account to be disabled until activation
-       if (inviteToken.getPurpose() == TokenPurpose.FIRST_PASSWORD_SET
-               && user.getStatus() != UserStatus.DISABLED) {
-           throw new IllegalStateException("USER_NOT_ELIGIBLE_FOR_ACTIVATION");
-       }
+            User user = userRepository.findById(inviteToken.getUserId());
+            if (user == null) {
+                throw new IllegalStateException("USER_NOT_FOUND_FOR_TOKEN");
+            }
 
-       // In a more complex scenario we might have different flows based on TokenPurpose (e.g. password reset vs account activation)
-       String newPassword = request.getNewPassword();
-       if (!credentialPolicy.isPasswordStrong(newPassword)) {
-           throw new IllegalArgumentException("WEAK_PASSWORD");
-       }
-       String newHashedPassword = passwordHasher.hash(newPassword);
+            // For FIRST_PASSWORD_SET we expect the account to be disabled until activation
+            if (inviteToken.getPurpose() == TokenPurpose.FIRST_PASSWORD_SET
+                    && user.getStatus() != UserStatus.DISABLED) {
+                throw new IllegalStateException("USER_NOT_ELIGIBLE_FOR_ACTIVATION");
+            }
 
-       user.setPasswordHash(newHashedPassword);
-       user.setStatus(UserStatus.ACTIVE);
-       user.setFailedAttempts(0);
-       userRepository.save(user);
+            // In a more complex scenario we might have different flows based on TokenPurpose (e.g. password reset vs account activation)
+            String newPassword = request.getNewPassword();
+            if (!credentialPolicy.isPasswordStrong(newPassword)) {
+                throw new IllegalArgumentException("WEAK_PASSWORD");
+            }
+            String newHashedPassword = passwordHasher.hash(newPassword);
 
-       tokenRepository.markUsed(inviteToken.getId(), clock.now());
+            user.setPasswordHash(newHashedPassword);
+            user.setStatus(UserStatus.ACTIVE);
+            user.setFailedAttempts(0);
+            userRepository.save(user);
+        });
    }
 }

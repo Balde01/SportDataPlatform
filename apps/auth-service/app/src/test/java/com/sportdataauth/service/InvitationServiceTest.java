@@ -4,6 +4,11 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,19 +26,14 @@ import com.sportdataauth.repository.InMemoryUserRepository;
 import com.sportdataauth.repository.InvitationTokenRepository;
 import com.sportdataauth.repository.UserRepository;
 import com.sportdataauth.security.BcryptPasswordHasher;
-import com.sportdataauth.security.InMemoryRefreshTokenService;
-import com.sportdataauth.security.JwtService;
 import com.sportdataauth.security.PasswordHasher;
-import com.sportdataauth.security.RefreshTokenService;
-import com.sportdataauth.security.SimpleJwtService;
-import com.sportdataauth.util.Clock;
+import com.sportdataauth.util.NoopTransactionRunner;
 import com.sportdataauth.util.SystemClock;
 import com.sportdataauth.util.TokenGenerator;
 import com.sportdataauth.util.TokenHasher;
+import com.sportdataauth.util.TransactionRunner;
 
 public class InvitationServiceTest {
-   private AuthService authService;
-   private RegisterService registerService;
    private InvitationService invitationService;
 
    private TokenHasher tokenHasher;
@@ -41,98 +41,104 @@ public class InvitationServiceTest {
    private CredentialPolicy credentialPolicy;
    private UserRepository userRepository;
    private PasswordHasher passwordHasher;
-   private JwtService jwtService;
-   private RefreshTokenService refreshTokenService;
    private TokenGenerator tokenGenerator;
-   private Clock clock;
+   private SystemClock clock;
+   private TransactionRunner tx;
+   private User user;
 
-   private final String email = "test@gmail.com";
+   private final UUID userId = UUID.randomUUID();
+   private final Email userEmail = Email.of("disabled@gmail.com");
    private final String password = "Secret123@";
-   private final int maxFailedAttempts = 5;
+   private final int inviteValidDays = 7;
 
    @BeforeEach
    public void setUp() {
-       userRepository = new InMemoryUserRepository();
-       passwordHasher = new BcryptPasswordHasher();
-       tokenGenerator = new TokenGenerator();
-       clock = new SystemClock();
-       jwtService = new SimpleJwtService(tokenGenerator, clock);
-       refreshTokenService = new InMemoryRefreshTokenService();
-       credentialPolicy = new DefaultCredentialPolicy();
-       tokenHasher = new TokenHasher();
-       tokenRepository = new InMemoryInvitationTokenRepository();
-       invitationService = new InvitationService(
-                userRepository,
-                tokenRepository, 
-                tokenGenerator,
-                tokenHasher, 
-                passwordHasher, 
-                credentialPolicy, 
-                clock, 
-                maxFailedAttempts);
-       authService = new AuthService(
-               userRepository,
-               passwordHasher,
-               jwtService,
-               refreshTokenService,
-               clock,
-               maxFailedAttempts
-       );
+      userRepository = new InMemoryUserRepository();
+      passwordHasher = new BcryptPasswordHasher();
+      tokenGenerator = new TokenGenerator();
+      clock = new SystemClock();
+      credentialPolicy = new DefaultCredentialPolicy();
+      tokenHasher = new TokenHasher();
+      tokenRepository = new InMemoryInvitationTokenRepository();
+      tx = new NoopTransactionRunner();
 
-       registerService = new RegisterService(userRepository, credentialPolicy, passwordHasher, clock);
+      invitationService = new InvitationService(
+         userRepository,
+         tokenRepository,
+         tokenGenerator,
+         tokenHasher,
+         passwordHasher,
+         credentialPolicy,
+         clock,
+         inviteValidDays,
+         tx
+      );
+
+      user = new User(
+         userId,
+         userEmail,
+         null,
+         Set.of(Role.AGENT),
+         UserStatus.DISABLED,
+         0,
+         clock.now(),
+         null
+      );
+      userRepository.save(user);
    }   
 
-    @Test
-    void shouldProvisionAgentAsDisabled() {
-       ProvisionAgentRequest request = new ProvisionAgentRequest(email);
+   @Test
+   void shouldProvisionAgentAsDisabled() {
+       ProvisionAgentRequest request = new ProvisionAgentRequest(userEmail.value());
        assertDoesNotThrow(()->invitationService.provisionAgent(request));
-    }
+      }
 
-    @Test
-    void shouldCreateInvitationToken() {
-       UUID userId = UUID.randomUUID();
-       TokenPurpose purpose = TokenPurpose.PASSWORD_RESET; 
+   @Test
+   void shouldCreateInvitationToken() {
+       TokenPurpose purpose = TokenPurpose.FIRST_PASSWORD_SET; 
        assertDoesNotThrow(()->invitationService.createInvite(userId, purpose));
-    }
+      }
 
-    @Test
-    void shouldAcceptInviteSuccessfully() {
-       UUID id = UUID.randomUUID();
-       Email userEmail = Email.of("disabled@gmail.com");
-
-
-       User user = new User(
-               id,
-               userEmail,
-               null,
-               Set.of(Role.CLIENT),
-               UserStatus.DISABLED,
-               0,
-               clock.now(),
-               null
-       );
-       userRepository.save(user);
-       TokenPurpose purpose = TokenPurpose.PASSWORD_RESET; 
-       String token = invitationService.createInvite(id, purpose);
+   @Test
+   void shouldAcceptInviteSuccessfully() {
+       TokenPurpose purpose = TokenPurpose.FIRST_PASSWORD_SET; 
+       String token = invitationService.createInvite(userId, purpose);
        InviteAcceptRequest request = new InviteAcceptRequest(token, password);
        assertDoesNotThrow(()->invitationService.acceptInvite(request));
        
-    }
+      }
 
-    @Test
-    void shouldFailWhenTokenExpired() {
-        
-    }
+   @Test
+   void shouldFailWhenTokenExpired() {
+      String token = invitationService.createInvite(userId, TokenPurpose.FIRST_PASSWORD_SET);
 
-    @Test
-    void shouldFailWhenTokenAlreadyUsed() {
-        
-    }
+      clock.setFixedTime(clock.now().plusDays(inviteValidDays + 1));
 
-    @Test
-    void shouldActivateUserAfterAcceptingInvite() {
-        
-    }
+      InviteAcceptRequest req = new InviteAcceptRequest(token, password);
+      assertThrows(IllegalStateException.class, () -> invitationService.acceptInvite(req));
+      }
+
+
+   @Test
+   void shouldFailWhenTokenAlreadyUsed() {
+      String token = invitationService.createInvite(userId, TokenPurpose.FIRST_PASSWORD_SET);
+      invitationService.acceptInvite(new InviteAcceptRequest(token, password));
+      assertThrows(IllegalStateException.class,
+         () -> invitationService.acceptInvite(new InviteAcceptRequest(token, password)));
+   }
+
+   @Test
+   void shouldActivateUserAfterAcceptingInvite() {
+         String token = invitationService.createInvite(userId, TokenPurpose.FIRST_PASSWORD_SET);
+         assertNotNull(token);
+         assertTrue(!token.isBlank());
+         invitationService.acceptInvite(new InviteAcceptRequest(token, password));
+
+         User updated = userRepository.findById(userId);
+         assertEquals(UserStatus.ACTIVE, updated.getStatus());
+         assertNotNull(updated.getPasswordHash());
+         assertTrue(passwordHasher.matches(password, updated.getPasswordHash()));
+      }
 
 }
 
