@@ -29,15 +29,16 @@ public class InMemoryUserRepository implements UserRepository {
         if (id == null) {
             throw new IllegalArgumentException("INVALID_REQUEST");
         }
-        byId.get(id);
         return byId.get(id);
     }
 
     @Override
     public void save(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("INVALID_REQUEST");
+        }
         byId.put(user.getId(), user);
         idByEmail.put(user.getEmail(), user.getId());
-        System.out.println("Saved user: " + user.getEmail());
     }
 
 }

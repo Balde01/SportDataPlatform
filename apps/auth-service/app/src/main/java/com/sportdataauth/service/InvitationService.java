@@ -89,6 +89,10 @@ public class InvitationService {
    }
 
    public String createInvite(UUID userId, TokenPurpose purpose) {
+        User user = userRepository.findById(userId);
+       if (user == null){
+        throw new IllegalStateException("USER_NOT_FOUND");
+       }
        if (userId == null || purpose == null) {
            throw new IllegalArgumentException("INVALID_INVITE_PARAMS");
        }
