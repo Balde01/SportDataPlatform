@@ -9,6 +9,14 @@ import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.Role;
 import com.sportdataauth.domain.enums.TokenPurpose;
 import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.exception.AccountDisabledException;
+import com.sportdataauth.domain.exception.InvalidInviteExpiryException;
+import com.sportdataauth.domain.exception.InvalidRequestException;
+import com.sportdataauth.domain.exception.InvitationTokenNotFoundException;
+import com.sportdataauth.domain.exception.TokenExpiredException;
+import com.sportdataauth.domain.exception.UserNotEligibleException;
+import com.sportdataauth.domain.exception.UserNotFoundException;
+import com.sportdataauth.domain.exception.WeakPasswordException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.InviteAcceptRequest;
 import com.sportdataauth.dto.ProvisionAgentRequest;
@@ -59,7 +67,7 @@ public class InvitationService {
     */
    public String provisionAgent(ProvisionAgentRequest request) {
        if (request == null || request.getEmail() == null) {
-           throw new IllegalArgumentException("INVALID_REQUEST");
+           throw InvalidRequestException.nullValue("request");
        }
 
 	   Email email = Email.of(request.getEmail());
@@ -82,7 +90,7 @@ public class InvitationService {
            user = newUser;
        } else if (!user.hasRole(Role.AGENT)) {
            // Avoid turning a CLIENT into AGENT silently in MVP
-           throw new IllegalStateException("USER_EXISTS_NOT_AGENT");
+           throw new UserNotEligibleException();
        }
 
        return createInvite(user.getId(), TokenPurpose.FIRST_PASSWORD_SET);
@@ -91,10 +99,10 @@ public class InvitationService {
    public String createInvite(UUID userId, TokenPurpose purpose) {
         User user = userRepository.findById(userId);
        if (user == null){
-        throw new IllegalStateException("USER_NOT_FOUND");
+        throw new UserNotFoundException();
        }
        if (userId == null || purpose == null) {
-           throw new IllegalArgumentException("INVALID_INVITE_PARAMS");
+           throw InvalidRequestException.invalidValue("inviteParams");
        }
 
        String rawToken = tokenGenerator.generateToken();
@@ -118,8 +126,14 @@ public class InvitationService {
 
    public void acceptInvite(InviteAcceptRequest request) {
        tx.runInTransaction(() ->{
-            if (request == null || request.getToken() == null || request.getNewPassword() == null) {
-                throw new IllegalArgumentException("INVALID_REQUEST");
+            if (request == null) {
+                throw InvalidRequestException.nullValue("user");
+            }
+            if (request.getToken() == null) {
+                throw InvalidRequestException.nullValue("token");
+            }
+            if (request.getNewPassword() == null) {
+                throw InvalidRequestException.nullValue("newPassword");
             }
 
             LocalDateTime now = clock.now();
@@ -128,24 +142,24 @@ public class InvitationService {
             InvitationToken inviteToken = tokenRepository.consumeValidByTokenHash(tokenHash, now);
 
             if (inviteToken == null) {
-            throw new IllegalStateException("INVALID_OR_EXPIRED_TOKEN");
+                throw new InvitationTokenNotFoundException();
             }
 
             User user = userRepository.findById(inviteToken.getUserId());
             if (user == null) {
-                throw new IllegalStateException("USER_NOT_FOUND_FOR_TOKEN");
+                throw new UserNotFoundException();
             }
 
             // For FIRST_PASSWORD_SET we expect the account to be disabled until activation
             if (inviteToken.getPurpose() == TokenPurpose.FIRST_PASSWORD_SET
                     && user.getStatus() != UserStatus.DISABLED) {
-                throw new IllegalStateException("USER_NOT_ELIGIBLE_FOR_ACTIVATION");
+                throw new AccountDisabledException();
             }
 
             // In a more complex scenario we might have different flows based on TokenPurpose (e.g. password reset vs account activation)
             String newPassword = request.getNewPassword();
             if (!credentialPolicy.isPasswordStrong(newPassword)) {
-                throw new IllegalArgumentException("WEAK_PASSWORD");
+                throw new WeakPasswordException();
             }
             String newHashedPassword = passwordHasher.hash(newPassword);
 
