@@ -27,7 +27,7 @@ It manages:
 ## Architecture
 
 The service follows a layered structure:
-
+```text
 com.sportdataauth
 │
 ├── domain/ → Entities & Value Objects
@@ -37,7 +37,7 @@ com.sportdataauth
 ├── security/ → JWT, password hashing, refresh tokens
 ├── policy/ → Credential validation rules
 └── util/ → Technical helpers
-
+```
 ---
 
 ## Running the Project
@@ -50,19 +50,16 @@ From `apps/auth-service/`:
 
 ./gradlew clean test
 
-shell
 
 ### Build the module:
 
 ./gradlew clean build
 
-sql
 
 Test reports are generated at:
 
 app/build/reports/tests/test/index.html
 
-yaml
 
 ---
 
