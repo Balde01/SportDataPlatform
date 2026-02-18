@@ -21,7 +21,7 @@ The platform is built progressively with a clean and scalable architecture, star
 ---
 
 ## Repository Structure
-
+```text
 SportDataPlatform/
 │
 ├── apps/
@@ -32,7 +32,7 @@ SportDataPlatform/
 │ └── identity-access/ → Detailed documentation (FR / EN)
 │
 └── README.md
-
+```
 ---
 
 ## Architecture Documentation
