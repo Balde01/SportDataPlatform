@@ -1,4 +1,5 @@
 # SportData Platform
+![Java CI](https://github.com/Balde01/SportDataPlatform/actions/workflows/build.yml/badge.svg?branch=develop)
 
 ## Overview
 
