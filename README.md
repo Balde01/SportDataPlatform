@@ -26,11 +26,11 @@ The platform is built progressively with a clean and scalable architecture, star
 SportDataPlatform/
 │
 ├── apps/
-│ └── auth-service/ → Identity/Auth MVP
+│ └── auth-service/               → Identity/Auth MVP
 │
 ├── docs/
 │ └── architecture/
-│ └── identity-access/ → Detailed documentation (FR / EN)
+│ └── identity-access/            → Detailed documentation (FR / EN)
 │
 └── README.md
 ```
@@ -40,7 +40,7 @@ SportDataPlatform/
 
 All architecture documentation is located in:
 
-docs/architecture/identity-access/
+[`docs/architecture/identity-access/`](docs/architecture/identity-access/)
 
 Main documents include:
 
@@ -64,12 +64,36 @@ apps/auth-service/README.md
 
 ---
 
+## Tech Stack
+
+- Java 21
+- Gradle
+- JUnit 5
+- BCrypt
+- GitHub Actions (CI)
+
+---
+
 ## Roadmap (High-Level)
 
 1. Identity/Auth MVP (accounts, invitations, login, refresh tokens)
 2. Admin provisioning (agent lifecycle management)
 3. Governance/Audit (traceability, security logs)
 4. Domain logic for sports data collection
+
+---
+
+## Continuous Integration
+
+This project uses GitHub Actions for automated builds and test execution.
+
+Every push or pull request to develop and main triggers:
+
+- Gradle build
+
+- Full test suite execution
+
+- Automatic failure detection
 
 ---
 
