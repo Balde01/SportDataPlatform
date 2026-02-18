@@ -1,4 +1,4 @@
-name: Java CI
+name: Auth Service CI
 
 on:
  push:
@@ -21,7 +21,7 @@ jobs:
 
      - name: Grant execute permission for Gradle wrapper
        run: chmod +x apps/auth-service/gradlew
-       
+
      - name: Build auth-service with Gradle
        working-directory: apps/auth-service
        run: ./gradlew clean build
