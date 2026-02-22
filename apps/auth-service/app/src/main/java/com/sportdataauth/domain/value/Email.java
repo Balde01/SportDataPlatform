@@ -4,6 +4,8 @@ import java.text.Normalizer;
 import java.util.Locale;
 import java.util.Objects;
 
+import com.sportdataauth.domain.exception.EmailNotAllowedException;
+
 public final class Email {
 
     private final String value;
@@ -14,7 +16,7 @@ public final class Email {
 
     public static Email of(String raw) {
         if (raw == null) {
-            throw new IllegalArgumentException("EMAIL_CANNOT_BE_NULL");
+            throw new EmailNotAllowedException();
         }
 
         String canonical = raw.trim();
@@ -22,7 +24,7 @@ public final class Email {
         canonical = canonical.toLowerCase(Locale.ROOT);
 
         if (canonical.isBlank()) {
-            throw new IllegalArgumentException("EMAIL_CANNOT_BE_BLANK");
+            throw new  EmailNotAllowedException();
         }
 
         return new Email(canonical);

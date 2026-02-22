@@ -4,6 +4,11 @@ import javax.security.sasl.AuthenticationException;
 
 import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.exception.AccountDisabledException;
+import com.sportdataauth.domain.exception.AccountLockedException;
+import com.sportdataauth.domain.exception.InvalidCredentialsException;
+import com.sportdataauth.domain.exception.InvalidRequestException;
+import com.sportdataauth.domain.exception.UserNotEligibleException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.LoginRequest;
 import com.sportdataauth.dto.TokenResponse;
@@ -35,23 +40,27 @@ public class AuthService {
 	}
 
 	public TokenResponse login(LoginRequest loginRequest) throws AuthenticationException {
+		
+		if (loginRequest == null) throw InvalidRequestException.nullValue("request");
+		if (loginRequest.getPassword() == null) throw InvalidRequestException.nullValue("password");
+
 		Email email = Email.of(loginRequest.getEmail());
 		User user = userRepository.findByEmail(email);
 
 		if (user == null){
-			throw new AuthenticationException("INVALID_EMAIL_OR_PASSWORD");
+			throw new InvalidCredentialsException();
 		}
 
 		if (user.getStatus() == UserStatus.LOCKED) {
-			throw new AuthenticationException("USER_ACCOUNT_LOCKED");
+			throw new AccountLockedException();
 		}
 
 		if (user.getStatus() == UserStatus.DISABLED) {
-			throw new AuthenticationException("USER_ACCOUNT_DISABLED");
+			throw new AccountDisabledException();
 		}
 
 		if (user.getPasswordHash() == null) {
-			throw new AuthenticationException("USER_HAS_NO_PASSWORD");
+			throw new UserNotEligibleException("PASSWORD_NOT_SET");
 		}
 
 		boolean passwordMatches = passwordHasher.matches(loginRequest.getPassword(), user.getPasswordHash());
@@ -61,7 +70,7 @@ public class AuthService {
 				user.setStatus(UserStatus.LOCKED);
 			}
 			userRepository.save(user);
-			throw new AuthenticationException("INVALID_EMAIL_OR_PASSWORD");
+			throw new InvalidCredentialsException();
 		}
 		// Reset failed attempts on successful login
 		user.setFailedAttempts(0);

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.sportdataauth.domain.entity.User;
+import com.sportdataauth.domain.exception.InvalidRequestException;
 import com.sportdataauth.domain.value.Email;
 
 public class InMemoryUserRepository implements UserRepository {
@@ -15,7 +16,7 @@ public class InMemoryUserRepository implements UserRepository {
     @Override
     public User findByEmail(Email email) {
         if (email == null) {
-            throw new IllegalArgumentException("INVALID_REQUEST");
+            throw InvalidRequestException.nullValue("email");
         }
         UUID id = idByEmail.get(email);
         if (id == null) {
@@ -27,7 +28,7 @@ public class InMemoryUserRepository implements UserRepository {
     @Override
     public User findById(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("INVALID_REQUEST");
+           throw InvalidRequestException.nullValue("id");
         }
         return byId.get(id);
     }
@@ -35,7 +36,7 @@ public class InMemoryUserRepository implements UserRepository {
     @Override
     public void save(User user) {
         if (user == null) {
-            throw new IllegalArgumentException("INVALID_REQUEST");
+            throw InvalidRequestException.nullValue("user");
         }
         byId.put(user.getId(), user);
         idByEmail.put(user.getEmail(), user.getId());

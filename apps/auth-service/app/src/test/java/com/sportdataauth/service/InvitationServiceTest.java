@@ -16,6 +16,7 @@ import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.Role;
 import com.sportdataauth.domain.enums.TokenPurpose;
 import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.exception.InvitationTokenNotFoundException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.InviteAcceptRequest;
 import com.sportdataauth.dto.ProvisionAgentRequest;
@@ -115,7 +116,7 @@ public class InvitationServiceTest {
       clock.setFixedTime(clock.now().plusDays(inviteValidDays + 1));
 
       InviteAcceptRequest req = new InviteAcceptRequest(token, password);
-      assertThrows(IllegalStateException.class, () -> invitationService.acceptInvite(req));
+      assertThrows(InvitationTokenNotFoundException.class, () -> invitationService.acceptInvite(req));
       }
 
 
@@ -123,7 +124,7 @@ public class InvitationServiceTest {
    void shouldFailWhenTokenAlreadyUsed() {
       String token = invitationService.createInvite(userId, TokenPurpose.FIRST_PASSWORD_SET);
       invitationService.acceptInvite(new InviteAcceptRequest(token, password));
-      assertThrows(IllegalStateException.class,
+      assertThrows(InvitationTokenNotFoundException.class,
          () -> invitationService.acceptInvite(new InviteAcceptRequest(token, password)));
    }
 

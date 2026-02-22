@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.sportdataauth.domain.enums.TokenPurpose;
+import com.sportdataauth.domain.exception.InvalidInviteExpiryException;
 public class InvitationToken {
    private final UUID id;
    private final UUID userId;
@@ -27,7 +28,7 @@ public class InvitationToken {
        this.createdAt = Objects.requireNonNull(createdAt, "CREATED_AT_IS_REQUIRED");
        // Invariants simples
        if (!expiresAt.isAfter(createdAt)) {
-           throw new IllegalArgumentException("EXPIRES_AT_MUST_BE_AFTER_CREATED_AT");
+           throw new InvalidInviteExpiryException();
        }
        this.usedAt = usedAt;
    }

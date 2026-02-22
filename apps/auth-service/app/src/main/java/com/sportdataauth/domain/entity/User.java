@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.sportdataauth.domain.enums.Role;
 import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.exception.InvalidFailedAttemptsException;
 import com.sportdataauth.domain.value.Email;
 public class User {
    private final UUID id;
@@ -28,7 +29,7 @@ public class User {
        this.email = Objects.requireNonNull(email, "EMAIL_IS_REQUIRED");
        this.roles = Objects.requireNonNull(roles, "ROLES_IS_REQUIRED");
        this.status = Objects.requireNonNull(status, "STATUS_IS_REQUIRED");
-       if (failedAttempts < 0) throw new IllegalArgumentException("FAILED_ATTEMPTS_MUST_BE_GREATER_OR_EQUAL_TO_ZERO");
+       if (failedAttempts < 0) throw new InvalidFailedAttemptsException();
        this.passwordHash = passwordHash;
        this.failedAttempts = failedAttempts;
        this.createdAt = Objects.requireNonNull(createdAt, "CREATED_AT_IS_REQUIRED");
@@ -52,7 +53,7 @@ public class User {
    public void setRoles(Set<Role> roles) { this.roles = Objects.requireNonNull(roles); }
    public void setStatus(UserStatus status) { this.status = Objects.requireNonNull(status); }
    public void setFailedAttempts(int failedAttempts) {
-       if (failedAttempts < 0) throw new IllegalArgumentException("FAILED_ATTEMPTS_MUST_BE_GREATER_OR_EQUAL_TO_ZERO");
+       if (failedAttempts < 0) throw new InvalidFailedAttemptsException();
        this.failedAttempts = failedAttempts;
    }
    public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
