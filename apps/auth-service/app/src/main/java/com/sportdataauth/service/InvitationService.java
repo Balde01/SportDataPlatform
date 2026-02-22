@@ -9,11 +9,8 @@ import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.Role;
 import com.sportdataauth.domain.enums.TokenPurpose;
 import com.sportdataauth.domain.enums.UserStatus;
-import com.sportdataauth.domain.exception.AccountDisabledException;
-import com.sportdataauth.domain.exception.InvalidInviteExpiryException;
 import com.sportdataauth.domain.exception.InvalidRequestException;
 import com.sportdataauth.domain.exception.InvitationTokenNotFoundException;
-import com.sportdataauth.domain.exception.TokenExpiredException;
 import com.sportdataauth.domain.exception.UserNotEligibleException;
 import com.sportdataauth.domain.exception.UserNotFoundException;
 import com.sportdataauth.domain.exception.WeakPasswordException;
@@ -90,20 +87,21 @@ public class InvitationService {
            user = newUser;
        } else if (!user.hasRole(Role.AGENT)) {
            // Avoid turning a CLIENT into AGENT silently in MVP
-           throw new UserNotEligibleException();
+           throw new UserNotEligibleException("USER_EXISTS_NOT_AGENT");
        }
 
        return createInvite(user.getId(), TokenPurpose.FIRST_PASSWORD_SET);
    }
 
    public String createInvite(UUID userId, TokenPurpose purpose) {
-        User user = userRepository.findById(userId);
+       if (userId == null || purpose == null) {
+           throw InvalidRequestException.invalidValue("inviteParams");
+       } 
+       User user = userRepository.findById(userId);
        if (user == null){
         throw new UserNotFoundException();
        }
-       if (userId == null || purpose == null) {
-           throw InvalidRequestException.invalidValue("inviteParams");
-       }
+       
 
        String rawToken = tokenGenerator.generateToken();
        String hashedToken = tokenHasher.hash(rawToken);
@@ -127,7 +125,7 @@ public class InvitationService {
    public void acceptInvite(InviteAcceptRequest request) {
        tx.runInTransaction(() ->{
             if (request == null) {
-                throw InvalidRequestException.nullValue("user");
+                throw InvalidRequestException.nullValue("request");
             }
             if (request.getToken() == null) {
                 throw InvalidRequestException.nullValue("token");
@@ -153,7 +151,7 @@ public class InvitationService {
             // For FIRST_PASSWORD_SET we expect the account to be disabled until activation
             if (inviteToken.getPurpose() == TokenPurpose.FIRST_PASSWORD_SET
                     && user.getStatus() != UserStatus.DISABLED) {
-                throw new AccountDisabledException();
+                throw new UserNotEligibleException("USER_NOT_DISABLED_FOR_FIRST_PASSWORD_SET");
             }
 
             // In a more complex scenario we might have different flows based on TokenPurpose (e.g. password reset vs account activation)

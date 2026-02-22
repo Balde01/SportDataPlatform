@@ -5,6 +5,10 @@ import java.util.UUID;
 import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.Role;
 import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.exception.EmailAlreadyExistsException;
+import com.sportdataauth.domain.exception.EmailNotAllowedException;
+import com.sportdataauth.domain.exception.InvalidRequestException;
+import com.sportdataauth.domain.exception.WeakPasswordException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.RegisterRequest;
 import com.sportdataauth.dto.UserResponse;
@@ -29,17 +33,19 @@ public class RegisterService {
 	}
     
     public UserResponse registerClient(RegisterRequest req) {
+		if (req == null) throw InvalidRequestException.nullValue("request");
+		if (req.getPassword() == null) throw new WeakPasswordException();
 		Email email = Email.of(req.getEmail());
 		String password = req.getPassword();
 		if (!credentialPolicy.isEmailAllowed(email.value())) {
-			throw new IllegalArgumentException("INVALID_EMAIL");
+			throw new EmailNotAllowedException();
 		}
 		if (!credentialPolicy.isPasswordStrong(password)) {
-			throw new IllegalArgumentException("WEAK_PASSWORD");
+			throw new WeakPasswordException();
 		}
 
 		if (userRepository.findByEmail(email) != null) {
-			throw new IllegalStateException("EMAIL_ALREADY_EXISTS");
+			throw new EmailAlreadyExistsException();
 		}
 		String hashedPassword = passwordHasher.hash(password);
 		User newUser = new User(

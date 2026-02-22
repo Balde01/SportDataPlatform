@@ -3,8 +3,6 @@ package com.sportdataauth.service;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.security.sasl.AuthenticationException;
-
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.Role;
 import com.sportdataauth.domain.enums.UserStatus;
+import com.sportdataauth.domain.exception.AccountDisabledException;
+import com.sportdataauth.domain.exception.AccountLockedException;
+import com.sportdataauth.domain.exception.InvalidCredentialsException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.LoginRequest;
 import com.sportdataauth.dto.RegisterRequest;
@@ -80,7 +81,7 @@ public class AuthServiceTest {
    @Test
    void shouldFailWhenPasswordIncorrect() {
        LoginRequest req = new LoginRequest(email, password + "Fake");
-       assertThrows(AuthenticationException.class, () -> authService.login(req));
+       assertThrows(InvalidCredentialsException.class, () -> authService.login(req));
    }
 
    @Test
@@ -89,7 +90,7 @@ public class AuthServiceTest {
        int before = userRepository.findByEmail(e).getFailedAttempts();
 
        LoginRequest req = new LoginRequest(email, password + "Fake");
-       assertThrows(AuthenticationException.class, () -> authService.login(req));
+       assertThrows(InvalidCredentialsException.class, () -> authService.login(req));
 
        int after = userRepository.findByEmail(e).getFailedAttempts();
        assertEquals(before + 1, after);
@@ -99,7 +100,7 @@ public class AuthServiceTest {
    void shouldLockUserAfterMaxAttempts() {
        for (int i = 0; i < maxFailedAttempts; i++) {
            LoginRequest req = new LoginRequest(email, password + "Fake");
-           assertThrows(AuthenticationException.class, () -> authService.login(req));
+           assertThrows(InvalidCredentialsException.class, () -> authService.login(req));
        }
 
        UserStatus status = userRepository.findByEmail(Email.of(email)).getStatus();
@@ -110,7 +111,7 @@ public class AuthServiceTest {
    void shouldResetFailedAttemptsOnSuccess() {
        for (int i = 0; i < maxFailedAttempts - 1; i++) {
            LoginRequest req = new LoginRequest(email, password + "Fake");
-           assertThrows(AuthenticationException.class, () -> authService.login(req));
+           assertThrows(InvalidCredentialsException.class, () -> authService.login(req));
        }
 
        assertDoesNotThrow(() -> authService.login(new LoginRequest(email, password)));
@@ -123,10 +124,10 @@ public class AuthServiceTest {
    void shouldNotLoginWhenUserLocked() {
        for (int i = 0; i < maxFailedAttempts; i++) {
            LoginRequest req = new LoginRequest(email, password + "Fake");
-           assertThrows(AuthenticationException.class, () -> authService.login(req));
+           assertThrows(InvalidCredentialsException.class, () -> authService.login(req));
        }
 
-       assertThrows(AuthenticationException.class, () -> authService.login(new LoginRequest(email, password)));
+       assertThrows(AccountLockedException.class, () -> authService.login(new LoginRequest(email, password)));
    }
 
    @Test
@@ -147,7 +148,7 @@ public class AuthServiceTest {
        );
        userRepository.save(user);
 
-       assertThrows(AuthenticationException.class,
+       assertThrows(AccountDisabledException.class,
                () -> authService.login(new LoginRequest("disabled@gmail.com", password)));
    }
 }

@@ -4,7 +4,7 @@ import java.text.Normalizer;
 import java.util.Locale;
 import java.util.Objects;
 
-import com.sportdataauth.domain.exception.InvalidRequestException;
+import com.sportdataauth.domain.exception.EmailNotAllowedException;
 
 public final class Email {
 
@@ -16,7 +16,7 @@ public final class Email {
 
     public static Email of(String raw) {
         if (raw == null) {
-            throw InvalidRequestException.nullValue("email");
+            throw new EmailNotAllowedException();
         }
 
         String canonical = raw.trim();
@@ -24,7 +24,7 @@ public final class Email {
         canonical = canonical.toLowerCase(Locale.ROOT);
 
         if (canonical.isBlank()) {
-            throw InvalidRequestException.invalidValue("email");
+            throw new  EmailNotAllowedException();
         }
 
         return new Email(canonical);

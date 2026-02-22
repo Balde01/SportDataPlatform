@@ -9,6 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sportdataauth.domain.entity.User;
+import com.sportdataauth.domain.exception.EmailAlreadyExistsException;
+import com.sportdataauth.domain.exception.EmailNotAllowedException;
+import com.sportdataauth.domain.exception.WeakPasswordException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.RegisterRequest;
 import com.sportdataauth.dto.UserResponse;
@@ -54,7 +57,7 @@ public class RegisterServiceTest {
    void shouldFailWhenEmailInvalid() {
     RegisterRequest req = new RegisterRequest("InvalidEmail.com", "Secret1@");
 
-    assertThrows(IllegalArgumentException.class, () -> registerService.registerClient(req));
+    assertThrows(EmailNotAllowedException.class, () -> registerService.registerClient(req));
 
     // Ensure we didn't create a user (simple sanity check)
     assertNull(userRepository.findByEmail(Email.of("InvalidEmail.com")));
@@ -64,10 +67,10 @@ public class RegisterServiceTest {
    @Test
    void shouldFailWhenPasswordInvalid() {
        RegisterRequest req = new RegisterRequest("test@email.com", "#####");
-       assertThrows(IllegalArgumentException.class, () -> registerService.registerClient(req));
+       assertThrows(WeakPasswordException.class, () -> registerService.registerClient(req));
 
        RegisterRequest req2 = new RegisterRequest("test@email.com", null);
-       assertThrows(IllegalArgumentException.class, () -> registerService.registerClient(req2));
+       assertThrows(WeakPasswordException.class, () -> registerService.registerClient(req2));
 
        Email e = Email.of("test@email.com");
        assertNull(userRepository.findByEmail(e));
@@ -77,7 +80,7 @@ public class RegisterServiceTest {
    void shouldFailWhenEmailAlreadyExists() {
        RegisterRequest req = new RegisterRequest("test@email.com", "Secret1@");
        registerService.registerClient(req);
-       assertThrows(IllegalStateException.class, () -> registerService.registerClient(req));
+       assertThrows(EmailAlreadyExistsException.class, () -> registerService.registerClient(req));
    }
 
    @Test

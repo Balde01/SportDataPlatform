@@ -29,7 +29,7 @@ public class User {
        this.email = Objects.requireNonNull(email, "EMAIL_IS_REQUIRED");
        this.roles = Objects.requireNonNull(roles, "ROLES_IS_REQUIRED");
        this.status = Objects.requireNonNull(status, "STATUS_IS_REQUIRED");
-       if (failedAttempts < 0) throw new IllegalArgumentException("FAILED_ATTEMPTS_MUST_BE_GREATER_OR_EQUAL_TO_ZERO");
+       if (failedAttempts < 0) throw new InvalidFailedAttemptsException();
        this.passwordHash = passwordHash;
        this.failedAttempts = failedAttempts;
        this.createdAt = Objects.requireNonNull(createdAt, "CREATED_AT_IS_REQUIRED");
