@@ -219,6 +219,17 @@ package "com.sportdataauth.security" {
 }
 
 ' =========================
+' EXCEPTIONS (domain + technical)
+' =========================
+package "com.sportdataauth.domain.exception" {
+  abstract class DomainException
+}
+
+package "com.sportdataauth.security.exception" {
+  class TokenHashingException
+}
+
+' =========================
 ' SERVICES (orchestration)
 ' =========================
 package "com.sportdataauth.service" {
@@ -289,6 +300,14 @@ InvitationService --> PasswordHasher
 InvitationService --> Clock
 InvitationService --> TransactionRunner
 
+' Services can throw domain exceptions (business errors)
+RegisterService ..> DomainException : throws
+AuthService ..> DomainException : throws
+InvitationService ..> DomainException : throws
+
+' TokenHasher can throw technical hashing errors
+TokenHasher ..> TokenHashingException : throws
+
 note right of InvitationTokenRepository
 consumeValidByTokenHash(...) is atomic:
 - checks expired/used
@@ -297,36 +316,10 @@ Prevents double-use in concurrency.
 end note
 
 note right of InvitationService
-inviteValidityDays = 7 days
 If token expired/used:
 - agent account remains DISABLED
 - service must re-issue invite
 end note
 
-@endumlervice --> UserRepository
-RegisterService --> CredentialPolicy
-RegisterService --> PasswordHasher
-RegisterService --> Clock
-
-AuthService --> UserRepository
-AuthService --> PasswordHasher
-AuthService --> JwtService
-AuthService --> RefreshTokenService
-AuthService --> Clock
-
-InvitationService --> UserRepository
-InvitationService --> InvitationTokenRepository
-InvitationService --> TokenGenerator
-InvitationService --> TokenHasher
-InvitationService --> CredentialPolicy
-InvitationService --> PasswordHasher
-InvitationService --> Clock
-
-note right of InvitationService
-inviteValidityDays = 7 days
-If token expired/used:
-- agent account remains DISABLED
-- service must re-issue invite
-end note
 
 @enduml
