@@ -1,5 +1,5 @@
 package com.sportdataauth.domain.entity;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -15,16 +15,16 @@ public class User {
    private Set<Role> roles;
    private UserStatus status;
    private int failedAttempts;
-   private final LocalDateTime createdAt;
-   private LocalDateTime lastLoginAt;
+   private final Instant createdAt;
+   private Instant lastLoginAt;
    public User(UUID id,
                Email email,
                String passwordHash,
                Set<Role> roles,
                UserStatus status,
                int failedAttempts,
-               LocalDateTime createdAt,
-               LocalDateTime lastLoginAt) {
+               Instant createdAt,
+               Instant lastLoginAt) {
        this.id = Objects.requireNonNull(id, "ID_IS_REQUIRED");
        this.email = Objects.requireNonNull(email, "EMAIL_IS_REQUIRED");
        this.roles = Objects.requireNonNull(roles, "ROLES_IS_REQUIRED");
@@ -47,8 +47,8 @@ public class User {
    public Set<Role> getRoles() { return roles; }
    public UserStatus getStatus() { return status; }
    public int getFailedAttempts() { return failedAttempts; }
-   public LocalDateTime getCreatedAt() { return createdAt; }
-   public LocalDateTime getLastLoginAt() { return lastLoginAt; }
+   public Instant getCreatedAt() { return createdAt; }
+   public Instant getLastLoginAt() { return lastLoginAt; }
    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
    public void setRoles(Set<Role> roles) { this.roles = Objects.requireNonNull(roles); }
    public void setStatus(UserStatus status) { this.status = Objects.requireNonNull(status); }
@@ -56,5 +56,5 @@ public class User {
        if (failedAttempts < 0) throw new InvalidFailedAttemptsException();
        this.failedAttempts = failedAttempts;
    }
-   public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
+   public void setLastLoginAt(Instant lastLoginAt) { this.lastLoginAt = lastLoginAt; }
 }

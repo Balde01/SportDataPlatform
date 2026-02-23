@@ -1,7 +1,7 @@
 package com.sportdataauth.util;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public interface Clock {
-	LocalDateTime now();
+	Instant now();
 }

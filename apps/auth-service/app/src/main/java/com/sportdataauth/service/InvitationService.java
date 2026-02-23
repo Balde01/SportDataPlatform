@@ -1,6 +1,6 @@
 package com.sportdataauth.service;
-
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
@@ -106,14 +106,14 @@ public class InvitationService {
        String rawToken = tokenGenerator.generateToken();
        String hashedToken = tokenHasher.hash(rawToken);
 
-       LocalDateTime now = clock.now();
+       Instant now = clock.now();
 
        InvitationToken inviteToken = new InvitationToken(
                UUID.randomUUID(),
                userId,
                hashedToken,
                purpose,
-               now.plusDays(inviteValidDays),
+               now.plus(Duration.ofDays(inviteValidDays)),
                null,   // usedAt
                now     // createdAt
        );
@@ -134,7 +134,7 @@ public class InvitationService {
                 throw InvalidRequestException.nullValue("newPassword");
             }
 
-            LocalDateTime now = clock.now();
+            Instant now = clock.now();
 
             String tokenHash = tokenHasher.hash(request.getToken());
             InvitationToken inviteToken = tokenRepository.consumeValidByTokenHash(tokenHash, now);

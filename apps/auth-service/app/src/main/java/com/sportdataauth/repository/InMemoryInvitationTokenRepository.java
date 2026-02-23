@@ -1,6 +1,6 @@
 package com.sportdataauth.repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -19,7 +19,7 @@ public class InMemoryInvitationTokenRepository implements InvitationTokenReposit
    }
 
    @Override
-   public synchronized InvitationToken consumeValidByTokenHash(String tokenHash, LocalDateTime now) {
+   public synchronized InvitationToken consumeValidByTokenHash(String tokenHash, Instant now) {
        UUID id = idByTokenHashMap.get(tokenHash);
        if (id == null) return null;
 

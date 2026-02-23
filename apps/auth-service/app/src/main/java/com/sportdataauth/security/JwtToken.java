@@ -1,14 +1,14 @@
 package com.sportdataauth.security;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class JwtToken {
 
     private final String token;
 
-    private final LocalDateTime expiresAt;
+    private final Instant expiresAt;
 
-    public JwtToken(String token, LocalDateTime expiresAt) {
+    public JwtToken(String token, Instant expiresAt) {
 
         this.token = token;
 
@@ -20,7 +20,7 @@ public class JwtToken {
         return token;
     }
 
-    public LocalDateTime getExpiresAt() {
+    public Instant getExpiresAt() {
         return expiresAt;
     }
 

@@ -1,5 +1,5 @@
 package com.sportdataauth.domain.entity;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -10,16 +10,16 @@ public class InvitationToken {
    private final UUID userId;
    private final String tokenHash;
    private final TokenPurpose purpose;
-   private final LocalDateTime expiresAt;
-   private final LocalDateTime createdAt;
-   private LocalDateTime usedAt; // modifié via Repository (markUsed)
+   private final Instant expiresAt;
+   private final Instant createdAt;
+   private Instant usedAt; // modifié via Repository (markUsed)
    public InvitationToken(UUID id,
                           UUID userId,
                           String tokenHash,
                           TokenPurpose purpose,
-                          LocalDateTime expiresAt,
-                          LocalDateTime usedAt,
-                          LocalDateTime createdAt) {
+                          Instant expiresAt,
+                          Instant usedAt,
+                          Instant createdAt) {
        this.id = Objects.requireNonNull(id, "ID_IS_REQUIRED");
        this.userId = Objects.requireNonNull(userId, "USER_ID_IS_REQUIRED");
        this.tokenHash = Objects.requireNonNull(tokenHash, "TOKEN_HASH_IS_REQUIRED");
@@ -32,8 +32,8 @@ public class InvitationToken {
        }
        this.usedAt = usedAt;
    }
-   public boolean isExpired(LocalDateTime now) {
-       return expiresAt.isBefore(now);
+   public boolean isExpired(Instant now) {
+       return !expiresAt.isAfter(now); // expired if expiresAt <= now
    }
    public boolean isUsed() {
        return usedAt != null;
@@ -42,7 +42,7 @@ public class InvitationToken {
    public UUID getUserId() { return userId; }
    public String getTokenHash() { return tokenHash; }
    public TokenPurpose getPurpose() { return purpose; }
-   public LocalDateTime getExpiresAt() { return expiresAt; }
-   public LocalDateTime getUsedAt() { return usedAt; }
-   public LocalDateTime getCreatedAt() { return createdAt; }
+   public Instant getExpiresAt() { return expiresAt; }
+   public Instant getUsedAt() { return usedAt; }
+   public Instant getCreatedAt() { return createdAt; }
 }
