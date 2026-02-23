@@ -1,18 +1,18 @@
 package com.sportdataauth.util;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class SystemClock implements Clock {
-    private LocalDateTime fixedTime;
+    private Instant fixedTime;
 
     public SystemClock() {
     }
-    public void setFixedTime(LocalDateTime fixedTime) {
+    public void setFixedTime(Instant fixedTime) {
         this.fixedTime = fixedTime;
     }
     @Override
-    public LocalDateTime now() {
-        return fixedTime != null ? fixedTime : LocalDateTime.now();
+    public Instant now() {
+        return fixedTime != null ? fixedTime : Instant.now();
     }
 
 }

@@ -1,5 +1,6 @@
 package com.sportdataauth.service;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.UUID;
 
@@ -113,7 +114,7 @@ public class InvitationServiceTest {
    void shouldFailWhenTokenExpired() {
       String token = invitationService.createInvite(userId, TokenPurpose.FIRST_PASSWORD_SET);
 
-      clock.setFixedTime(clock.now().plusDays(inviteValidDays + 1));
+      clock.setFixedTime(clock.now().plus(Duration.ofDays(inviteValidDays + 1)));
 
       InviteAcceptRequest req = new InviteAcceptRequest(token, password);
       assertThrows(InvitationTokenNotFoundException.class, () -> invitationService.acceptInvite(req));

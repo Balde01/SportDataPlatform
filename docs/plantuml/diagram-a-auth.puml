@@ -11,7 +11,7 @@
 ' - Domain uses Email value object for canonical storage and lookup
 ' - CredentialPolicy is the single place for email/password acceptance rules
 ' - JwtService returns JwtToken as source of truth for expiresAt
-' - All timestamps use LocalDateTime (via Clock)
+' - All timestamps use Instant (via Clock)
 ' - Invitation token consumption is atomic at repository level (consume)
 ' - TransactionRunner defines the transaction boundary (noop now, real later)
 ' ============================================================
@@ -68,8 +68,8 @@ package "com.sportdataauth.domain.entity" {
    - roles: Set<Role>
    - status: UserStatus
    - failedAttempts: int
-   - createdAt: LocalDateTime
-   - lastLoginAt: LocalDateTime
+   - createdAt: Instant
+   - lastLoginAt: Instant
 
    + hasRole(role: Role): boolean
    + isActive(): boolean
@@ -80,11 +80,11 @@ package "com.sportdataauth.domain.entity" {
    - userId: UUID
    - tokenHash: String
    - purpose: TokenPurpose
-   - expiresAt: LocalDateTime
-   - usedAt: LocalDateTime
-   - createdAt: LocalDateTime
+   - expiresAt: Instant
+   - usedAt: Instant
+   - createdAt: Instant
 
-   + isExpired(now: LocalDateTime): boolean
+   + isExpired(now: Instant): boolean
    + isUsed(): boolean
  }
 }
@@ -116,7 +116,7 @@ package "com.sportdataauth.dto" {
  class TokenResponse {
    + accessToken: String
    + refreshToken: String
-   + expiresAt: LocalDateTime
+   + expiresAtEpochSeconds: long
  }
 
  class UserResponse {
@@ -124,7 +124,7 @@ package "com.sportdataauth.dto" {
    + email: String
    + roles: Set<Role>
    + status: UserStatus
-   + createdAt: LocalDateTime
+   + createdAt: Instant
  }
 }
 
@@ -143,7 +143,7 @@ package "com.sportdataauth.repository" {
    ' Atomic read+write:
    ' - returns used token if valid
    ' - returns null if invalid/expired/already used
-   + consumeValidByTokenHash(tokenHash: String, now: LocalDateTime): InvitationToken
+   + consumeValidByTokenHash(tokenHash: String, now: Instant): InvitationToken
    + save(token: InvitationToken): void
  }
 }
@@ -174,7 +174,7 @@ package "com.sportdataauth.util" {
  }
 
  interface Clock {
-   + now(): LocalDateTime
+   + now(): Instant
  }
 
  interface TransactionRunner {
@@ -195,9 +195,9 @@ package "com.sportdataauth.security" {
 
  class JwtToken {
    - token: String
-   - expiresAt: LocalDateTime
+   - expiresAt: Instant
    + getToken(): String
-   + getExpiresAt(): LocalDateTime
+   + getExpiresAt(): Instant
  }
 
  interface JwtService {
@@ -283,43 +283,44 @@ JwtService --> JwtToken
 RegisterService --> UserRepository
 RegisterService --> CredentialPolicy
 RegisterService --> PasswordHasher
-RegisterService --> Clock
+' RegisterService --> Clock
 
 AuthService --> UserRepository
 AuthService --> PasswordHasher
 AuthService --> JwtService
 AuthService --> RefreshTokenService
-AuthService --> Clock
+' AuthService --> Clock
 
 InvitationService --> UserRepository
 InvitationService --> InvitationTokenRepository
 InvitationService --> TokenGenerator
 InvitationService --> TokenHasher
-InvitationService --> CredentialPolicy
-InvitationService --> PasswordHasher
-InvitationService --> Clock
+' InvitationService --> CredentialPolicy
+' InvitationService --> PasswordHasher
+' InvitationService --> Clock
 InvitationService --> TransactionRunner
+' colonne 1: domain, dto
+' colonne 2: repository, policy, util
+' colonne 3: security, service
 
-' Services can throw domain exceptions (business errors)
-RegisterService ..> DomainException : throws
-AuthService ..> DomainException : throws
-InvitationService ..> DomainException : throws
-
-' TokenHasher can throw technical hashing errors
-TokenHasher ..> TokenHashingException : throws
-
-note right of InvitationTokenRepository
+User -[hidden]-> UserRepository
+UserRepository -[hidden]-> JwtService
+JwtService -[hidden]-> AuthService
+note bottom of InvitationTokenRepository
 consumeValidByTokenHash(...) is atomic:
 - checks expired/used
 - sets usedAt = now
 Prevents double-use in concurrency.
 end note
 
-note right of InvitationService
+note top of InvitationService
 If token expired/used:
 - agent account remains DISABLED
 - service must re-issue invite
 end note
 
-
+note top of DomainException
+Services throw domain exceptions
+(UserNotFound, WeakPassword, Token*, etc.)
+end note
 @enduml

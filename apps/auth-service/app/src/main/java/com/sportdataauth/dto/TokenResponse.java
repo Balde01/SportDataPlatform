@@ -1,19 +1,19 @@
 package com.sportdataauth.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class TokenResponse {
 	private String accessToken;
 	private String refreshToken;
-	private LocalDateTime expiresAt;
+	public long expiresAtEpochSeconds;
 	
-	public TokenResponse(String accessToken, String refreshToken, LocalDateTime expiresAt) {
+	public TokenResponse(String accessToken, String refreshToken, Instant expiresAt) {
 		this.accessToken = accessToken;
 		this.refreshToken = refreshToken;
-		this.expiresAt = expiresAt;
+		this.expiresAtEpochSeconds = expiresAt.getEpochSecond();
 	}
 	
-	public String getAcessToken() {
+	public String getAccessToken() {
 		return accessToken;
 	}
 
@@ -21,8 +21,8 @@ public class TokenResponse {
 		return refreshToken;
 	}
 
-	public LocalDateTime getExpiresAt() {
-		return expiresAt;
+	public long expiresAtEpochSeconds() {
+		return expiresAtEpochSeconds;
 	}
 
 }

@@ -1,6 +1,6 @@
 package com.sportdataauth.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
@@ -12,9 +12,9 @@ public class UserResponse {
 	private String email;
 	private Set<Role> roles;
 	private UserStatus status;
-	private LocalDateTime createdAt;
+	private Instant createdAt;
 	
-	public UserResponse(UUID id, String email, Set<Role> roles, UserStatus status, LocalDateTime createdAt) {
+	public UserResponse(UUID id, String email, Set<Role> roles, UserStatus status, Instant createdAt) {
 		this.id = id;
 		this.email = email;
 		this.roles = roles;
@@ -33,7 +33,7 @@ public class UserResponse {
 	public UserStatus getStatus() {
 		return status;
 	}
-	public LocalDateTime getCreatedAt() {
+	public Instant getCreatedAt() {
 		return createdAt;
 	}
 
