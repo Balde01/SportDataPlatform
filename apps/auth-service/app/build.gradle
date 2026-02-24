@@ -17,6 +17,11 @@ dependencies {
    // ===== TESTING =====
    testImplementation "org.junit.jupiter:junit-jupiter:5.10.0"
    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
+   // ==== DATABASE =====
+   implementation "org.postgresql:postgresql:42.7.4"
+   // ==== FLYWAY =====
+   implementation "org.flywaydb:flyway-core:10.17.0"
 }
 
 java {

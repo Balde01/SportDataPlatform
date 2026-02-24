@@ -1,0 +1,14 @@
+services:
+ postgres:
+   image: postgres:16
+   container_name: sportdataauth-postgres
+   environment:
+     POSTGRES_DB: sportdataauth
+     POSTGRES_USER: sportdata
+     POSTGRES_PASSWORD: sportdata
+   ports:
+     - "5432:5432"
+   volumes:
+     - sportdataauth_pgdata:/var/lib/postgresql/data
+volumes:
+ sportdataauth_pgdata:
