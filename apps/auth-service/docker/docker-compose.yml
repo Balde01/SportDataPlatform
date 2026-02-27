@@ -4,8 +4,8 @@ services:
     container_name: sportdataauth-postgres
     environment:
       POSTGRES_DB: sportdataauth
-      POSTGRES_USER: sportdata // Voluntarily using a simple username for development; change this in production
-      POSTGRES_PASSWORD: sportdata // Voluntarily using a simple password for development; change this in production
+      POSTGRES_USER: sportdata # Voluntarily using a simple username for development; change this in production
+      POSTGRES_PASSWORD: sportdata # Voluntarily using a simple password for development; change this in production
     ports:
       - "5433:5432"
     volumes:
@@ -25,8 +25,8 @@ services:
     command: -connectRetries=60 migrate
     environment:
       FLYWAY_URL: jdbc:postgresql://postgres:5432/sportdataauth
-      FLYWAY_USER: sportdata // Voluntarily using a simple username for development; change this in production
-      FLYWAY_PASSWORD: sportdata // Voluntarily using a simple password for development; change this in production
+      FLYWAY_USER: sportdata # Voluntarily using a simple username for development; change this in production
+      FLYWAY_PASSWORD: sportdata # Voluntarily using a simple password for development; change this in production
       FLYWAY_LOCATIONS: filesystem:/flyway/sql
     volumes:
       - ../db/migration:/flyway/sql:ro
