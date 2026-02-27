@@ -1,14 +1,35 @@
 services:
- postgres:
-   image: postgres:16
-   container_name: sportdataauth-postgres
-   environment:
-     POSTGRES_DB: sportdataauth
-     POSTGRES_USER: sportdata
-     POSTGRES_PASSWORD: sportdata
-   ports:
-     - "5432:5432"
-   volumes:
-     - sportdataauth_pgdata:/var/lib/postgresql/data
+  postgres:
+    image: postgres:16
+    container_name: sportdataauth-postgres
+    environment:
+      POSTGRES_DB: sportdataauth
+      POSTGRES_USER: sportdata // Voluntarily using a simple username for development; change this in production
+      POSTGRES_PASSWORD: sportdata // Voluntarily using a simple password for development; change this in production
+    ports:
+      - "5433:5432"
+    volumes:
+      - sportdataauth_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sportdata -d sportdataauth"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  flyway:
+    image: flyway/flyway:10
+    container_name: sportdataauth-flyway
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: -connectRetries=60 migrate
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/sportdataauth
+      FLYWAY_USER: sportdata // Voluntarily using a simple username for development; change this in production
+      FLYWAY_PASSWORD: sportdata // Voluntarily using a simple password for development; change this in production
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ../db/migration:/flyway/sql:ro
+
 volumes:
- sportdataauth_pgdata:
+  sportdataauth_pgdata:
