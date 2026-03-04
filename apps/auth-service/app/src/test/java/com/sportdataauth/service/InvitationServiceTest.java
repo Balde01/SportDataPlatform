@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -136,7 +135,7 @@ public class InvitationServiceTest {
          assertTrue(!token.isBlank());
          invitationService.acceptInvite(new InviteAcceptRequest(token, password));
 
-         User updated = userRepository.findById(userId);
+         User updated = userRepository.findById(userId).orElse(null);
          assertEquals(UserStatus.ACTIVE, updated.getStatus());
          assertNotNull(updated.getPasswordHash());
          assertTrue(passwordHasher.matches(password, updated.getPasswordHash()));

@@ -87,12 +87,12 @@ public class AuthServiceTest {
    @Test
    void shouldIncrementFailedAttempts() {
        Email e = Email.of(email);
-       int before = userRepository.findByEmail(e).getFailedAttempts();
+       int before = userRepository.findByEmail(e).orElse(null).getFailedAttempts();
 
        LoginRequest req = new LoginRequest(email, password + "Fake");
        assertThrows(InvalidCredentialsException.class, () -> authService.login(req));
 
-       int after = userRepository.findByEmail(e).getFailedAttempts();
+       int after = userRepository.findByEmail(e).orElse(null).getFailedAttempts();
        assertEquals(before + 1, after);
    }
 
@@ -103,7 +103,7 @@ public class AuthServiceTest {
            assertThrows(InvalidCredentialsException.class, () -> authService.login(req));
        }
 
-       UserStatus status = userRepository.findByEmail(Email.of(email)).getStatus();
+       UserStatus status = userRepository.findByEmail(Email.of(email)).orElse(null).getStatus();
        assertEquals(UserStatus.LOCKED, status);
    }
 
@@ -116,7 +116,7 @@ public class AuthServiceTest {
 
        assertDoesNotThrow(() -> authService.login(new LoginRequest(email, password)));
 
-       int failedAttempts = userRepository.findByEmail(Email.of(email)).getFailedAttempts();
+       int failedAttempts = userRepository.findByEmail(Email.of(email)).orElse(null).getFailedAttempts();
        assertEquals(0, failedAttempts);
    }
 

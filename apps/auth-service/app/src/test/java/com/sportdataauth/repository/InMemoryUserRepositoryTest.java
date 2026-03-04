@@ -41,14 +41,16 @@ public class InMemoryUserRepositoryTest {
     @Test
     void shouldSaveAndFindUserByEmail() {
         userRepository.save(user);
-        User found = userRepository.findByEmail(userEmail);
+        User found = userRepository.findByEmail(userEmail)
+                                   .orElse(null);
         assertEquals(found.getEmail(), userEmail);
     }
  
     @Test
     void shouldNormalizeEmailOnSave() {
         userRepository.save(user);
-        User registeredUser = userRepository.findByEmail(userEmail);
+        User registeredUser = userRepository.findByEmail(userEmail)
+                                            .orElse(null);
         assertNotNull(registeredUser);
         assertEquals(registeredUser.getEmail().value(), "disabled@gmail.com");
     }
@@ -79,7 +81,7 @@ public class InMemoryUserRepositoryTest {
         userRepository.save(updatedUser);
 
         // Then
-        User found = userRepository.findById(userId);
+        User found = userRepository.findById(userId).orElse(null);
 
         assertNotNull(found);
         assertEquals(UserStatus.ACTIVE, found.getStatus());
@@ -89,7 +91,7 @@ public class InMemoryUserRepositoryTest {
     @Test
     void shouldFindUserById() {
         userRepository.save(user);
-        User found = userRepository.findById(userId);
+        User found = userRepository.findById(userId).orElse(null);
         assertNotNull(found);
         assertEquals(userId, found.getId());
     }
@@ -98,7 +100,8 @@ public class InMemoryUserRepositoryTest {
     void shouldFindUserRegardlessOfEmailCase() {
         userRepository.save(user);
         Email lookup = Email.of("disabled@gmail.com");
-        User found = userRepository.findByEmail(lookup);
+        User found = userRepository.findByEmail(lookup)
+                                   .orElse(null);
         assertNotNull(found);
     }
  

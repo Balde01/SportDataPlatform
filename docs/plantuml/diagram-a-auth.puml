@@ -134,8 +134,8 @@ package "com.sportdataauth.dto" {
 package "com.sportdataauth.repository" {
 
  interface UserRepository {
-   + findByEmail(email: Email): User
-   + findById(id: UUID): User
+   + findByEmail(email: Email): Optional<User>
+   + findById(id: UUID): Optional<User>
    + save(user: User): void
  }
 

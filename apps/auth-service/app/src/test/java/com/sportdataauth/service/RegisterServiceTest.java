@@ -103,7 +103,7 @@ public class RegisterServiceTest {
 
         registerService.registerClient(req);
 
-        User user = userRepository.findByEmail(Email.of("test2@email.com"));
+        User user = userRepository.findByEmail(Email.of("test2@email.com")).orElse(null);
         assertNotNull(user.getPasswordHash());
         assertNotEquals("Secret1@", user.getPasswordHash());
         assertEquals(true, passwordHasher.matches("Secret1@", user.getPasswordHash()));

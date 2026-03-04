@@ -45,7 +45,7 @@ public class AuthService {
 		if (loginRequest.getPassword() == null) throw InvalidRequestException.nullValue("password");
 
 		Email email = Email.of(loginRequest.getEmail());
-		User user = userRepository.findByEmail(email);
+		User user = userRepository.findByEmail(email).orElse(null);
 
 		if (user == null){
 			throw new InvalidCredentialsException();

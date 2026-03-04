@@ -69,7 +69,8 @@ public class InvitationService {
 
 	   Email email = Email.of(request.getEmail());
 
-       User user = userRepository.findByEmail(email);
+       User user = userRepository.findByEmail(email)
+               .orElse(null);
 
        if (user == null) {
            UUID userId = UUID.randomUUID();
@@ -97,10 +98,8 @@ public class InvitationService {
        if (userId == null || purpose == null) {
            throw InvalidRequestException.invalidValue("inviteParams");
        } 
-       User user = userRepository.findById(userId);
-       if (user == null){
-        throw new UserNotFoundException();
-       }
+       User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
        
 
        String rawToken = tokenGenerator.generateToken();
@@ -143,10 +142,8 @@ public class InvitationService {
                 throw new InvitationTokenNotFoundException();
             }
 
-            User user = userRepository.findById(inviteToken.getUserId());
-            if (user == null) {
-                throw new UserNotFoundException();
-            }
+            User user = userRepository.findById(inviteToken.getUserId())
+                    .orElseThrow(UserNotFoundException::new);
 
             // For FIRST_PASSWORD_SET we expect the account to be disabled until activation
             if (inviteToken.getPurpose() == TokenPurpose.FIRST_PASSWORD_SET
