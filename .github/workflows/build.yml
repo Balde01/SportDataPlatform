@@ -1,0 +1,27 @@
+name: Auth Service CI
+
+on:
+ push:
+   branches: [ develop, main ]
+ pull_request:
+   branches: [ develop, main ]
+
+jobs:
+ build:
+   runs-on: ubuntu-latest
+
+   steps:
+     - uses: actions/checkout@v4
+
+     - name: Set up JDK 21
+       uses: actions/setup-java@v4
+       with:
+         distribution: 'temurin'
+         java-version: '21'
+
+     - name: Grant execute permission for Gradle wrapper
+       run: chmod +x apps/auth-service/gradlew
+
+     - name: Build auth-service with Gradle
+       working-directory: apps/auth-service
+       run: ./gradlew clean build
