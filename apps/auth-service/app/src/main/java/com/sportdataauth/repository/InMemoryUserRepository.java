@@ -20,7 +20,7 @@ public class InMemoryUserRepository implements UserRepository {
             throw InvalidRequestException.nullValue("email");
         }
         UUID id = idByEmail.get(email);
-        if (id == null) return null;
+        if (id == null) return Optional.empty();
         return Optional.ofNullable(byId.get(id));
     }
 
