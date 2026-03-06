@@ -44,7 +44,7 @@ public class RegisterService {
 			throw new WeakPasswordException();
 		}
 
-		if (userRepository.findByEmail(email) != null) {
+		if (userRepository.findByEmail(email).isPresent()) {
 			throw new EmailAlreadyExistsException();
 		}
 		String hashedPassword = passwordHasher.hash(password);
