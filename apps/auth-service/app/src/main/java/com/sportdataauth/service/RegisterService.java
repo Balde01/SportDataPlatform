@@ -34,7 +34,7 @@ public class RegisterService {
     
     public UserResponse registerClient(RegisterRequest req) {
 		if (req == null) throw InvalidRequestException.nullValue("request");
-		if (req.getPassword() == null) throw new WeakPasswordException();
+		if (req.getPassword() == null) throw InvalidRequestException.nullValue("password");
 		Email email = Email.of(req.getEmail());
 		String password = req.getPassword();
 		if (!credentialPolicy.isEmailAllowed(email.value())) {
