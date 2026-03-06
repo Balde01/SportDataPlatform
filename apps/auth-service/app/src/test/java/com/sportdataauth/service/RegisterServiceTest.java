@@ -3,14 +3,17 @@ package com.sportdataauth.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.exception.EmailAlreadyExistsException;
 import com.sportdataauth.domain.exception.EmailNotAllowedException;
+import com.sportdataauth.domain.exception.InvalidRequestException;
 import com.sportdataauth.domain.exception.WeakPasswordException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.dto.RegisterRequest;
@@ -60,7 +63,7 @@ public class RegisterServiceTest {
     assertThrows(EmailNotAllowedException.class, () -> registerService.registerClient(req));
 
     // Ensure we didn't create a user (simple sanity check)
-    assertNull(userRepository.findByEmail(Email.of("InvalidEmail.com")));
+    assertEquals(Optional.empty(), userRepository.findByEmail(Email.of("InvalidEmail.com")));
 
    }
 
@@ -70,10 +73,10 @@ public class RegisterServiceTest {
        assertThrows(WeakPasswordException.class, () -> registerService.registerClient(req));
 
        RegisterRequest req2 = new RegisterRequest("test@email.com", null);
-       assertThrows(WeakPasswordException.class, () -> registerService.registerClient(req2));
+       assertThrows(InvalidRequestException.class, () -> registerService.registerClient(req2));
 
        Email e = Email.of("test@email.com");
-       assertNull(userRepository.findByEmail(e));
+       assertEquals(Optional.empty(), userRepository.findByEmail(e));
    }
 
    @Test
