@@ -1,11 +1,11 @@
 package com.sportdataauth.repository;
  
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
  
@@ -56,9 +56,9 @@ public class InMemoryUserRepositoryTest {
     }
  
     @Test
-    void shouldReturnNullWhenUserNotFound() {
+    void shouldReturnOptionalEmptyWhenUserNotFound() {
         Email inexistEmail = Email.of("someone@gmail.com");
-        assertNull(userRepository.findByEmail(inexistEmail));
+        assertEquals(Optional.empty(), userRepository.findByEmail(inexistEmail));
     }
 
     @Test
