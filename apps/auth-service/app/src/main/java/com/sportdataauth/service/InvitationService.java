@@ -122,7 +122,7 @@ public class InvitationService {
    }
 
    public void acceptInvite(InviteAcceptRequest request) {
-       tx.runInTransaction(() ->{
+       tx.runInTransaction(() -> {
             if (request == null) {
                 throw InvalidRequestException.nullValue("request");
             }
@@ -162,6 +162,7 @@ public class InvitationService {
             user.setStatus(UserStatus.ACTIVE);
             user.setFailedAttempts(0);
             userRepository.update(user);
+            return null;
         });
    }
 }

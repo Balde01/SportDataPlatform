@@ -20,18 +20,26 @@ import com.sportdataauth.domain.exception.InvalidRequestException;
 import com.sportdataauth.domain.exception.UserNotFoundException;
 import com.sportdataauth.domain.value.Email;
 import com.sportdataauth.repository.UserRepository;
+import com.sportdataauth.util.TransactionRunner;
 
 public class PostgresUserRepository implements UserRepository {
+
+    private final TransactionRunner tx;
+
+    public PostgresUserRepository(TransactionRunner tx) {
+        this.tx = tx;
+    }
 
     @Override
     public void insert(User user) {
         if (user == null) {
             throw InvalidRequestException.nullValue("user");
         }
-        JdbcTx.inTx(conn -> {
+        tx.runInTransaction(() -> {
+            Connection conn = JdbcTransactionContext.requireCurrent();
             insertUser(conn, user);
             insertRoles(conn, user.getId(), user.getRoles());
-                return null;
+            return null;
         });
     }
 
@@ -40,7 +48,8 @@ public class PostgresUserRepository implements UserRepository {
         if (email == null) {
             throw InvalidRequestException.nullValue("email");
         }
-        try (Connection conn = JdbcConnectionFactory.open()) {
+
+        return withConnection(conn -> {
             Optional<UserRow> rowOpt = selectUserByEmail(conn, email.value());
             if (rowOpt.isEmpty()) return Optional.empty();
 
@@ -48,9 +57,7 @@ public class PostgresUserRepository implements UserRepository {
             Set<Role> roles = selectRoles(conn, row.id);
 
             return Optional.of(toDomain(row, roles));
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find user by email", e);
-        }
+        });
     }
 
     @Override
@@ -58,7 +65,7 @@ public class PostgresUserRepository implements UserRepository {
         if (id == null) {
             throw InvalidRequestException.nullValue("id");
         }
-        try (Connection conn = JdbcConnectionFactory.open()) {
+        return withConnection(conn -> {
             Optional<UserRow> rowOpt = selectUserById(conn, id);
             if (rowOpt.isEmpty()) return Optional.empty();
 
@@ -66,16 +73,16 @@ public class PostgresUserRepository implements UserRepository {
             Set<Role> roles = selectRoles(conn, row.id);
 
             return Optional.of(toDomain(row, roles));
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find user by ID", e);
-        }
+        });
     }
+
     @Override
     public void update(User user) {
         if (user == null) {
             throw InvalidRequestException.nullValue("user");
         }
-        JdbcTx.inTx(conn -> {
+        tx.runInTransaction(() -> {
+            Connection conn = JdbcTransactionContext.requireCurrent();
             updateUser(conn, user);
             replaceRoles(conn, user.getId(), user.getRoles());
             return null;
@@ -87,18 +94,15 @@ public class PostgresUserRepository implements UserRepository {
         if (id == null) {
             throw InvalidRequestException.nullValue("id");
         }
-        String sql = "SELECT 1 FROM users WHERE id = ?";
-        try (Connection conn = JdbcConnectionFactory.open();
-            PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setObject(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+        return withConnection(conn -> {
+            String sql = "SELECT 1 FROM users WHERE id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setObject(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to check existence by id", e);
-        }
+        });
     }
 
     @Override
@@ -106,20 +110,39 @@ public class PostgresUserRepository implements UserRepository {
         if (email == null) {
             throw InvalidRequestException.nullValue("email");
         }
-        String sql = "SELECT 1 FROM users WHERE email = ?";
-        try (Connection conn = JdbcConnectionFactory.open();
-            PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, email.value());
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+        return withConnection(conn -> {
+            String sql = "SELECT 1 FROM users WHERE email = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, email.value());
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to check existence by email", e);
-        }
+        });
     }
     // ---------- SQL helpers ----------
+
+    private <T> T withConnection(SqlWork<T> work) {
+    Connection current = JdbcTransactionContext.getCurrent();
+    if (current != null) {
+        try {
+            return work.run(current);
+        } catch (SQLException e) {
+            throw new RuntimeException("Database read error", e);
+        }
+    }
+
+    try (Connection conn = JdbcConnectionFactory.open()) {
+        return work.run(conn);
+    } catch (SQLException e) {
+        throw new RuntimeException("Database read error", e);
+    }
+    }
+
+    @FunctionalInterface
+    private interface SqlWork<T> {
+        T run(Connection conn) throws SQLException;
+    }
 
     private void insertUser(Connection conn, User user) throws SQLException {
         String sql = """
