@@ -134,9 +134,12 @@ package "com.sportdataauth.dto" {
 package "com.sportdataauth.repository" {
 
  interface UserRepository {
+   + insert(user: User): void
+   + update(user: User): void
    + findByEmail(email: Email): Optional<User>
    + findById(id: UUID): Optional<User>
-   + save(user: User): void
+   + existsById(id: UUID): boolean
+   + existsByEmail(email: Email): boolean
  }
 
  interface InvitationTokenRepository {

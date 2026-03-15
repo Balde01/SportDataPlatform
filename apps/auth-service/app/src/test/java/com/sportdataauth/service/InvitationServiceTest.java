@@ -85,7 +85,7 @@ public class InvitationServiceTest {
          clock.now(),
          null
       );
-      userRepository.save(user);
+      userRepository.insert(user);
    }   
 
    @Test

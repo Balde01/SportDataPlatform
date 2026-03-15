@@ -44,9 +44,10 @@ public class RegisterService {
 			throw new WeakPasswordException();
 		}
 
-		if (userRepository.findByEmail(email).isPresent()) {
+		if (userRepository.existsByEmail(email)) {
 			throw new EmailAlreadyExistsException();
 		}
+
 		String hashedPassword = passwordHasher.hash(password);
 		User newUser = new User(
 			UUID.randomUUID(),
@@ -58,7 +59,7 @@ public class RegisterService {
 			clock.now(),
 			null
 		);
-		userRepository.save(newUser);
+		userRepository.insert(newUser);
 		return new UserResponse(
 			newUser.getId(),
 			newUser.getEmail().toString(),

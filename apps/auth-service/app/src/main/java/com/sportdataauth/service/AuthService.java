@@ -45,11 +45,8 @@ public class AuthService {
 		if (loginRequest.getPassword() == null) throw InvalidRequestException.nullValue("password");
 
 		Email email = Email.of(loginRequest.getEmail());
-		User user = userRepository.findByEmail(email).orElse(null);
-
-		if (user == null){
-			throw new InvalidCredentialsException();
-		}
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(InvalidCredentialsException::new);
 
 		if (user.getStatus() == UserStatus.LOCKED) {
 			throw new AccountLockedException();
@@ -69,13 +66,13 @@ public class AuthService {
 			if (user.getFailedAttempts() >= maxFailedAttempts) {
 				user.setStatus(UserStatus.LOCKED);
 			}
-			userRepository.save(user);
+			userRepository.update(user);
 			throw new InvalidCredentialsException();
 		}
 		// Reset failed attempts on successful login
 		user.setFailedAttempts(0);
 		user.setLastLoginAt(clock.now());
-		userRepository.save(user);
+		userRepository.update(user);
 
 
 		// Generate JWT token

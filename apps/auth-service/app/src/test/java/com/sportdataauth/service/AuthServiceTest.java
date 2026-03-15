@@ -146,7 +146,7 @@ public class AuthServiceTest {
                clock.now(),
                null
        );
-       userRepository.save(user);
+       userRepository.insert(user);
 
        assertThrows(AccountDisabledException.class,
                () -> authService.login(new LoginRequest("disabled@gmail.com", password)));

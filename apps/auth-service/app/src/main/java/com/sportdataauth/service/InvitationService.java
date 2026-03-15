@@ -84,7 +84,7 @@ public class InvitationService {
                    clock.now(),            // createdAt
                    null                    // lastLoginAt
            );
-           userRepository.save(newUser);
+           userRepository.insert(newUser);
            user = newUser;
        } else if (!user.hasRole(Role.AGENT)) {
            // Avoid turning a CLIENT into AGENT silently in MVP
@@ -161,7 +161,7 @@ public class InvitationService {
             user.setPasswordHash(newHashedPassword);
             user.setStatus(UserStatus.ACTIVE);
             user.setFailedAttempts(0);
-            userRepository.save(user);
+            userRepository.update(user);
         });
    }
 }

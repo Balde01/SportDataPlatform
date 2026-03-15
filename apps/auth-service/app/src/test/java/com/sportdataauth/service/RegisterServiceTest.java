@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 
@@ -53,7 +54,7 @@ public class RegisterServiceTest {
        Email e = Email.of("test2@email.com");
        assertEquals(e.value(), created.getEmail());
       
-       assertNotNull(userRepository.findByEmail(e));
+       assertTrue(userRepository.findByEmail(e).isPresent());
    }
 
    @Test
@@ -96,8 +97,8 @@ public class RegisterServiceTest {
 
         Email e1 = Email.of("  TEST2@Email.com  ");
         Email e2 = Email.of("test2@email.com");
-        assertNotNull(userRepository.findByEmail(e1));
-        assertNotNull(userRepository.findByEmail(e2));
+        assertTrue(userRepository.findByEmail(e1).isPresent());
+        assertTrue(userRepository.findByEmail(e2).isPresent());
    }
 
    @Test

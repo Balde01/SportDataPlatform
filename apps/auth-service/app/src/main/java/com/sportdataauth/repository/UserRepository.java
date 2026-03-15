@@ -7,8 +7,11 @@ import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.value.Email;
 
 public interface UserRepository {
-    Optional<User> findByEmail(Email email);
+    void insert(User user);
+    void update(User user);
     Optional<User> findById(UUID id);
-    void save(User user);
+    Optional<User> findByEmail(Email email);
+    boolean existsById(UUID id);
+    boolean existsByEmail(Email email);
 }
 
