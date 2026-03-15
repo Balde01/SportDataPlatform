@@ -98,7 +98,7 @@ public class InvitationService {
        if (userId == null || purpose == null) {
            throw InvalidRequestException.invalidValue("inviteParams");
        } 
-       User user = userRepository.findById(userId)
+       userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
        
 
