@@ -180,12 +180,16 @@ package "com.sportdataauth.util" {
    + now(): Instant
  }
 
+ interface TransactionWork<T> {
+  + run : T
+ }
+
  interface TransactionRunner {
-   + runInTransaction(action: Runnable): void
+   + runInTransaction(work: TransactionWork<T>): void
  }
 
  class NoopTransactionRunner {
-   + runInTransaction(action: Runnable): void
+   + runInTransaction(work: TransactionWork<T>): void
  }
 
  TransactionRunner <|.. NoopTransactionRunner
