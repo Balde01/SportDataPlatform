@@ -19,8 +19,6 @@ import com.sportdataauth.security.PasswordHasher;
 import com.sportdataauth.security.RefreshTokenService;
 import com.sportdataauth.util.Clock;
 
-
-
 public class AuthService {
 	private final UserRepository userRepository;
 	private final PasswordHasher passwordHasher;
@@ -62,16 +60,12 @@ public class AuthService {
 
 		boolean passwordMatches = passwordHasher.matches(loginRequest.getPassword(), user.getPasswordHash());
 		if (!passwordMatches) {
-			user.setFailedAttempts(user.getFailedAttempts() + 1);
-			if (user.getFailedAttempts() >= maxFailedAttempts) {
-				user.setStatus(UserStatus.LOCKED);
-			}
+			user.recordFailedLoginAttempt(maxFailedAttempts);
 			userRepository.update(user);
 			throw new InvalidCredentialsException();
 		}
 		// Reset failed attempts on successful login
-		user.setFailedAttempts(0);
-		user.setLastLoginAt(clock.now());
+		user.recordSuccessfulLogin(clock.now());
 		userRepository.update(user);
 
 
@@ -85,4 +79,3 @@ public class AuthService {
   
   
 }
-

@@ -1,4 +1,5 @@
 package com.sportdataauth.domain.entity;
+
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
@@ -7,6 +8,7 @@ import java.util.UUID;
 import com.sportdataauth.domain.enums.Role;
 import com.sportdataauth.domain.enums.UserStatus;
 import com.sportdataauth.domain.exception.InvalidFailedAttemptsException;
+import com.sportdataauth.domain.exception.InvalidRequestException;
 import com.sportdataauth.domain.value.Email;
 public class User {
    private final UUID id;
@@ -57,4 +59,22 @@ public class User {
        this.failedAttempts = failedAttempts;
    }
    public void setLastLoginAt(Instant lastLoginAt) { this.lastLoginAt = lastLoginAt; }
+
+   public void recordFailedLoginAttempt(int maxFailedAttempts) {
+       if (maxFailedAttempts <= 0) {
+           throw new InvalidFailedAttemptsException();
+       }
+       failedAttempts++;
+       if (failedAttempts >= maxFailedAttempts) {
+           status = UserStatus.LOCKED;
+       }
+   }
+
+   public void recordSuccessfulLogin(Instant loginTime) {
+    if (loginTime == null) {
+        throw InvalidRequestException.nullValue("loginTime");
+    }
+    lastLoginAt = loginTime;
+    failedAttempts = 0;
+}
 }
