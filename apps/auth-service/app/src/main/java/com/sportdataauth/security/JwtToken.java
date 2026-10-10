@@ -13,7 +13,6 @@ public class JwtToken {
         this.token = token;
 
         this.expiresAt = expiresAt;
-
     }
 
     public String getToken() {
@@ -23,5 +22,4 @@ public class JwtToken {
     public Instant getExpiresAt() {
         return expiresAt;
     }
-
 }

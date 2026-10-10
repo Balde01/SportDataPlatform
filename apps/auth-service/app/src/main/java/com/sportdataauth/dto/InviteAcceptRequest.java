@@ -1,19 +1,19 @@
 package com.sportdataauth.dto;
 
 public class InviteAcceptRequest {
-	private String token;
-	private String newPassword;
-	
-	public InviteAcceptRequest(String token, String newPassword) {
-		this.token = token;
-		this.newPassword = newPassword;
-	}
-	
-	public String getNewPassword() {
-		return newPassword;
-	}
+    private String token;
+    private String newPassword;
 
-	public String getToken() {
-		return token;
-	}
+    public InviteAcceptRequest(String token, String newPassword) {
+        this.token = token;
+        this.newPassword = newPassword;
+    }
+
+    public String getNewPassword() {
+        return newPassword;
+    }
+
+    public String getToken() {
+        return token;
+    }
 }

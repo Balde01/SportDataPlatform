@@ -1,10 +1,9 @@
 package com.sportdataauth.repository.postgres;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import com.sportdataauth.util.TransactionRunner;
 import com.sportdataauth.util.TransactionWork;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class JdbcTransactionRunner implements TransactionRunner {
 

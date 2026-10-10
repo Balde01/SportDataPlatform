@@ -5,7 +5,8 @@ import java.sql.Connection;
 public final class JdbcTransactionContext {
     private static final ThreadLocal<Connection> CURRENT = new ThreadLocal<>();
 
-    private JdbcTransactionContext() {}
+    private JdbcTransactionContext() {
+    }
 
     public static Connection getCurrent() {
         return CURRENT.get();

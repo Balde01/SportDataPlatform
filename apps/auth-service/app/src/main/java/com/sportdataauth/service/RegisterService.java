@@ -1,6 +1,4 @@
 package com.sportdataauth.service;
-import java.util.Set;
-import java.util.UUID;
 
 import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.Role;
@@ -16,6 +14,8 @@ import com.sportdataauth.policy.CredentialPolicy;
 import com.sportdataauth.repository.UserRepository;
 import com.sportdataauth.security.PasswordHasher;
 import com.sportdataauth.util.Clock;
+import java.util.Set;
+import java.util.UUID;
 
 public class RegisterService {
 
@@ -23,49 +23,40 @@ public class RegisterService {
     private final CredentialPolicy credentialPolicy;
     private final PasswordHasher passwordHasher;
     private final Clock clock;
-    
+
     public RegisterService(UserRepository userRepository, CredentialPolicy credentialPolicy,
-						   PasswordHasher passwordHasher, Clock clock) {
-		this.userRepository = userRepository;
-		this.credentialPolicy = credentialPolicy;
-		this.passwordHasher = passwordHasher;
-		this.clock = clock;
-	}
-    
+            PasswordHasher passwordHasher, Clock clock) {
+        this.userRepository = userRepository;
+        this.credentialPolicy = credentialPolicy;
+        this.passwordHasher = passwordHasher;
+        this.clock = clock;
+    }
+
     public UserResponse registerClient(RegisterRequest req) {
-		if (req == null) throw InvalidRequestException.nullValue("request");
-		if (req.getPassword() == null) throw InvalidRequestException.nullValue("password");
-		Email email = Email.of(req.getEmail());
-		String password = req.getPassword();
-		if (!credentialPolicy.isEmailAllowed(email.value())) {
-			throw new EmailNotAllowedException();
-		}
-		if (!credentialPolicy.isPasswordStrong(password)) {
-			throw new WeakPasswordException();
-		}
+        if (req == null) {
+            throw InvalidRequestException.nullValue("request");
+        }
+        if (req.getPassword() == null) {
+            throw InvalidRequestException.nullValue("password");
+        }
+        Email email = Email.of(req.getEmail());
+        String password = req.getPassword();
+        if (!credentialPolicy.isEmailAllowed(email.value())) {
+            throw new EmailNotAllowedException();
+        }
+        if (!credentialPolicy.isPasswordStrong(password)) {
+            throw new WeakPasswordException();
+        }
 
-		if (userRepository.existsByEmail(email)) {
-			throw new EmailAlreadyExistsException();
-		}
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException();
+        }
 
-		String hashedPassword = passwordHasher.hash(password);
-		User newUser = new User(
-			UUID.randomUUID(),
-			email,
-			hashedPassword,
-			Set.of(Role.CLIENT),
-			UserStatus.ACTIVE,
-			0,
-			clock.now(),
-			null
-		);
-		userRepository.insert(newUser);
-		return new UserResponse(
-			newUser.getId(),
-			newUser.getEmail().toString(),
-			newUser.getRoles(),
-			newUser.getStatus(),
-			newUser.getCreatedAt()
-		);
-	}
+        String hashedPassword = passwordHasher.hash(password);
+        User newUser = new User(UUID.randomUUID(), email, hashedPassword, Set.of(Role.CLIENT), UserStatus.ACTIVE, 0,
+                clock.now(), null);
+        userRepository.insert(newUser);
+        return new UserResponse(newUser.getId(), newUser.getEmail().toString(), newUser.getRoles(), newUser.getStatus(),
+                newUser.getCreatedAt());
+    }
 }

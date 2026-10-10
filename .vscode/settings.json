@@ -1,0 +1,8 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.format.settings.url": "apps/auth-service/config/java-formatter.xml",
+    "[java]": {
+        "editor.formatOnSave": true
+    }
+}

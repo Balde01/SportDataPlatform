@@ -1,7 +1,5 @@
 package com.sportdataauth.service;
 
-import javax.security.sasl.AuthenticationException;
-
 import com.sportdataauth.domain.entity.User;
 import com.sportdataauth.domain.enums.UserStatus;
 import com.sportdataauth.domain.exception.AccountDisabledException;
@@ -18,64 +16,65 @@ import com.sportdataauth.security.JwtToken;
 import com.sportdataauth.security.PasswordHasher;
 import com.sportdataauth.security.RefreshTokenService;
 import com.sportdataauth.util.Clock;
+import javax.security.sasl.AuthenticationException;
 
 public class AuthService {
-	private final UserRepository userRepository;
-	private final PasswordHasher passwordHasher;
-	private final JwtService jwtService;
-	private final RefreshTokenService refreshTokenService;
-	private final Clock clock;
-	private final int maxFailedAttempts;
 
-	public AuthService(UserRepository userRepository, PasswordHasher passwordHasher,
-					   JwtService jwtService, RefreshTokenService refreshTokenService, Clock clock, int maxFailedAttempts) {
-		this.userRepository = userRepository;
-		this.passwordHasher = passwordHasher;
-		this.jwtService = jwtService;
-		this.refreshTokenService = refreshTokenService;
-		this.clock = clock;
-		this.maxFailedAttempts = maxFailedAttempts;
-	}
+    private final UserRepository userRepository;
+    private final PasswordHasher passwordHasher;
+    private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
+    private final Clock clock;
+    private final int maxFailedAttempts;
 
-	public TokenResponse login(LoginRequest loginRequest) throws AuthenticationException {
-		
-		if (loginRequest == null) throw InvalidRequestException.nullValue("request");
-		if (loginRequest.getPassword() == null) throw InvalidRequestException.nullValue("password");
+    public AuthService(UserRepository userRepository, PasswordHasher passwordHasher, JwtService jwtService,
+            RefreshTokenService refreshTokenService, Clock clock, int maxFailedAttempts) {
+        this.userRepository = userRepository;
+        this.passwordHasher = passwordHasher;
+        this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
+        this.clock = clock;
+        this.maxFailedAttempts = maxFailedAttempts;
+    }
 
-		Email email = Email.of(loginRequest.getEmail());
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(InvalidCredentialsException::new);
+    public TokenResponse login(LoginRequest loginRequest) throws AuthenticationException {
 
-		if (user.getStatus() == UserStatus.LOCKED) {
-			throw new AccountLockedException();
-		}
+        if (loginRequest == null) {
+            throw InvalidRequestException.nullValue("request");
+        }
+        if (loginRequest.getPassword() == null) {
+            throw InvalidRequestException.nullValue("password");
+        }
 
-		if (user.getStatus() == UserStatus.DISABLED) {
-			throw new AccountDisabledException();
-		}
+        Email email = Email.of(loginRequest.getEmail());
+        User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
 
-		if (user.getPasswordHash() == null) {
-			throw new UserNotEligibleException("PASSWORD_NOT_SET");
-		}
+        if (user.getStatus() == UserStatus.LOCKED) {
+            throw new AccountLockedException();
+        }
 
-		boolean passwordMatches = passwordHasher.matches(loginRequest.getPassword(), user.getPasswordHash());
-		if (!passwordMatches) {
-			user.recordFailedLoginAttempt(maxFailedAttempts);
-			userRepository.update(user);
-			throw new InvalidCredentialsException();
-		}
-		// Reset failed attempts on successful login
-		user.recordSuccessfulLogin(clock.now());
-		userRepository.update(user);
+        if (user.getStatus() == UserStatus.DISABLED) {
+            throw new AccountDisabledException();
+        }
 
+        if (user.getPasswordHash() == null) {
+            throw new UserNotEligibleException("PASSWORD_NOT_SET");
+        }
 
-		// Generate JWT token
-		JwtToken jwtToken = jwtService.generateAccessToken(user);
-		// Generate refresh token
-		String refreshToken = refreshTokenService.rotateRefreshToken(user.getId());
-		return new TokenResponse(jwtToken.getToken(), refreshToken, jwtToken.getExpiresAt());
-	}
-    
-  
-  
+        boolean passwordMatches = passwordHasher.matches(loginRequest.getPassword(), user.getPasswordHash());
+        if (!passwordMatches) {
+            user.recordFailedLoginAttempt(maxFailedAttempts);
+            userRepository.update(user);
+            throw new InvalidCredentialsException();
+        }
+        // Reset failed attempts on successful login
+        user.recordSuccessfulLogin(clock.now());
+        userRepository.update(user);
+
+        // Generate JWT token
+        JwtToken jwtToken = jwtService.generateAccessToken(user);
+        // Generate refresh token
+        String refreshToken = refreshTokenService.rotateRefreshToken(user.getId());
+        return new TokenResponse(jwtToken.getToken(), refreshToken, jwtToken.getExpiresAt());
+    }
 }

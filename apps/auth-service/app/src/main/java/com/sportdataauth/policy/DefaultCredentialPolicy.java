@@ -4,11 +4,9 @@ import java.util.regex.Pattern;
 
 public class DefaultCredentialPolicy implements CredentialPolicy {
 
-    private static final Pattern EMAIL_PATTERN =
-        Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
-    private static final Pattern PASSWORD_PATTERN =
-        Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&]).{8,}$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&]).{8,}$");
 
     @Override
     public boolean isEmailAllowed(String email) {
@@ -20,4 +18,3 @@ public class DefaultCredentialPolicy implements CredentialPolicy {
         return password != null && PASSWORD_PATTERN.matcher(password).matches();
     }
 }
-

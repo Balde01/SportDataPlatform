@@ -4,5 +4,4 @@ public class UserAlreadyExistsException extends DomainException {
     public UserAlreadyExistsException() {
         super("USER_ALREADY_EXISTS");
     }
-
 }

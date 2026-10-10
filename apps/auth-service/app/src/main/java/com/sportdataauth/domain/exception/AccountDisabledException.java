@@ -5,5 +5,4 @@ public class AccountDisabledException extends DomainException {
     public AccountDisabledException() {
         super("ACCOUNT_DISABLED");
     }
-
 }

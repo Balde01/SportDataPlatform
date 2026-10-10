@@ -1,8 +1,4 @@
 package com.sportdataauth.service;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Set;
-import java.util.UUID;
 
 import com.sportdataauth.domain.entity.InvitationToken;
 import com.sportdataauth.domain.entity.User;
@@ -25,104 +21,91 @@ import com.sportdataauth.util.Clock;
 import com.sportdataauth.util.TokenGenerator;
 import com.sportdataauth.util.TokenHasher;
 import com.sportdataauth.util.TransactionRunner;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Set;
+import java.util.UUID;
 
 public class InvitationService {
 
-   private final UserRepository userRepository;
-   private final InvitationTokenRepository tokenRepository;
-   private final TokenGenerator tokenGenerator;
-   private final TokenHasher tokenHasher;
-   private final PasswordHasher passwordHasher;
-   private final CredentialPolicy credentialPolicy;
-   private final Clock clock;
-   private final int inviteValidDays;
-   private final TransactionRunner tx;
+    private final UserRepository userRepository;
+    private final InvitationTokenRepository tokenRepository;
+    private final TokenGenerator tokenGenerator;
+    private final TokenHasher tokenHasher;
+    private final PasswordHasher passwordHasher;
+    private final CredentialPolicy credentialPolicy;
+    private final Clock clock;
+    private final int inviteValidDays;
+    private final TransactionRunner tx;
 
-   public InvitationService(UserRepository userRepository,
-                            InvitationTokenRepository tokenRepository,
-                            TokenGenerator tokenGenerator,
-                            TokenHasher tokenHasher,
-                            PasswordHasher passwordHasher,
-                            CredentialPolicy credentialPolicy,
-                            Clock clock,
-                            int inviteValidDays,
-                            TransactionRunner tx) {
-       this.userRepository = userRepository;
-       this.tokenRepository = tokenRepository;
-       this.tokenGenerator = tokenGenerator;
-       this.tokenHasher = tokenHasher;
-       this.passwordHasher = passwordHasher;
-       this.credentialPolicy = credentialPolicy;
-       this.clock = clock;
-       this.inviteValidDays = inviteValidDays;
-       this.tx = tx;
-   }
+    public InvitationService(UserRepository userRepository, InvitationTokenRepository tokenRepository,
+            TokenGenerator tokenGenerator, TokenHasher tokenHasher, PasswordHasher passwordHasher,
+            CredentialPolicy credentialPolicy, Clock clock, int inviteValidDays, TransactionRunner tx) {
+        this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
+        this.tokenGenerator = tokenGenerator;
+        this.tokenHasher = tokenHasher;
+        this.passwordHasher = passwordHasher;
+        this.credentialPolicy = credentialPolicy;
+        this.clock = clock;
+        this.inviteValidDays = inviteValidDays;
+        this.tx = tx;
+    }
 
-   /**
-    * Provision an AGENT account (if missing) and issue an invitation token.
-    * Returns the raw token (to be emailed / shown once).
-    */
-   public String provisionAgent(ProvisionAgentRequest request) {
-       if (request == null || request.getEmail() == null) {
-           throw InvalidRequestException.nullValue("request");
-       }
+    /**
+     * Provision an AGENT account (if missing) and issue an invitation token.
+     * Returns the raw token (to be emailed / shown once).
+     */
+    public String provisionAgent(ProvisionAgentRequest request) {
+        if (request == null || request.getEmail() == null) {
+            throw InvalidRequestException.nullValue("request");
+        }
 
-	   Email email = Email.of(request.getEmail());
+        Email email = Email.of(request.getEmail());
 
-       User user = userRepository.findByEmail(email)
-               .orElse(null);
+        User user = userRepository.findByEmail(email).orElse(null);
 
-       if (user == null) {
-           UUID userId = UUID.randomUUID();
-           User newUser = new User(
-                   userId,
-                   email,
-                   null,                   // passwordHash
-                   Set.of(Role.AGENT),     // roles
-                   UserStatus.DISABLED,    // status
-                   0,                      // failedAttempts
-                   clock.now(),            // createdAt
-                   null                    // lastLoginAt
-           );
-           userRepository.insert(newUser);
-           user = newUser;
-       } else if (!user.hasRole(Role.AGENT)) {
-           // Avoid turning a CLIENT into AGENT silently in MVP
-           throw new UserNotEligibleException("USER_EXISTS_NOT_AGENT");
-       }
+        if (user == null) {
+            UUID userId = UUID.randomUUID();
+            User newUser = new User(userId, email, null, // passwordHash
+                    Set.of(Role.AGENT), // roles
+                    UserStatus.DISABLED, // status
+                    0, // failedAttempts
+                    clock.now(), // createdAt
+                    null // lastLoginAt
+            );
+            userRepository.insert(newUser);
+            user = newUser;
+        } else if (!user.hasRole(Role.AGENT)) {
+            // Avoid turning a CLIENT into AGENT silently in MVP
+            throw new UserNotEligibleException("USER_EXISTS_NOT_AGENT");
+        }
 
-       return createInvite(user.getId(), TokenPurpose.FIRST_PASSWORD_SET);
-   }
+        return createInvite(user.getId(), TokenPurpose.FIRST_PASSWORD_SET);
+    }
 
-   public String createInvite(UUID userId, TokenPurpose purpose) {
-       if (userId == null || purpose == null) {
-           throw InvalidRequestException.invalidValue("inviteParams");
-       } 
-       userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-       
+    public String createInvite(UUID userId, TokenPurpose purpose) {
+        if (userId == null || purpose == null) {
+            throw InvalidRequestException.invalidValue("inviteParams");
+        }
+        userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-       String rawToken = tokenGenerator.generateToken();
-       String hashedToken = tokenHasher.hash(rawToken);
+        String rawToken = tokenGenerator.generateToken();
+        String hashedToken = tokenHasher.hash(rawToken);
 
-       Instant now = clock.now();
+        Instant now = clock.now();
 
-       InvitationToken inviteToken = new InvitationToken(
-               UUID.randomUUID(),
-               userId,
-               hashedToken,
-               purpose,
-               now.plus(Duration.ofDays(inviteValidDays)),
-               null,   // usedAt
-               now     // createdAt
-       );
+        InvitationToken inviteToken = new InvitationToken(UUID.randomUUID(), userId, hashedToken, purpose,
+                now.plus(Duration.ofDays(inviteValidDays)), null, // usedAt
+                now // createdAt
+        );
 
-       tokenRepository.save(inviteToken);
-       return rawToken;
-   }
+        tokenRepository.save(inviteToken);
+        return rawToken;
+    }
 
-   public void acceptInvite(InviteAcceptRequest request) {
-       tx.runInTransaction(() -> {
+    public void acceptInvite(InviteAcceptRequest request) {
+        tx.runInTransaction(() -> {
             if (request == null) {
                 throw InvalidRequestException.nullValue("request");
             }
@@ -142,8 +125,7 @@ public class InvitationService {
                 throw new InvitationTokenNotFoundException();
             }
 
-            User user = userRepository.findById(inviteToken.getUserId())
-                    .orElseThrow(UserNotFoundException::new);
+            User user = userRepository.findById(inviteToken.getUserId()).orElseThrow(UserNotFoundException::new);
 
             // For FIRST_PASSWORD_SET we expect the account to be disabled until activation
             if (inviteToken.getPurpose() == TokenPurpose.FIRST_PASSWORD_SET
@@ -151,7 +133,9 @@ public class InvitationService {
                 throw new UserNotEligibleException("USER_NOT_DISABLED_FOR_FIRST_PASSWORD_SET");
             }
 
-            // In a more complex scenario we might have different flows based on TokenPurpose (e.g. password reset vs account activation)
+            // In a more complex scenario we might have different flows based on
+            // TokenPurpose (e.g.
+            // password reset vs account activation)
             String newPassword = request.getNewPassword();
             if (!credentialPolicy.isPasswordStrong(newPassword)) {
                 throw new WeakPasswordException();
@@ -164,5 +148,5 @@ public class InvitationService {
             userRepository.update(user);
             return null;
         });
-   }
+    }
 }

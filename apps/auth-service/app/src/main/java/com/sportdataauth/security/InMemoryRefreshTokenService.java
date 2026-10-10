@@ -1,10 +1,9 @@
 package com.sportdataauth.security;
 
+import com.sportdataauth.util.TokenGenerator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import com.sportdataauth.util.TokenGenerator;
 
 public class InMemoryRefreshTokenService implements RefreshTokenService {
     private final TokenGenerator tokenGenerator = new TokenGenerator();
@@ -36,5 +35,4 @@ public class InMemoryRefreshTokenService implements RefreshTokenService {
     public void revokeAll(UUID userId) {
         refreshTokenByUserId.remove(userId);
     }
-
 }

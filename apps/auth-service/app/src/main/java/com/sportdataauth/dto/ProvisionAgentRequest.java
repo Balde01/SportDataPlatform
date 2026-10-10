@@ -1,16 +1,14 @@
 package com.sportdataauth.dto;
 
 public class ProvisionAgentRequest {
-	
-    private String email;
-    
-    public ProvisionAgentRequest(String email) {
-		this.email = email;
-	}
-    
-    
-    public String getEmail() {
-		return email;
-	}
 
+    private String email;
+
+    public ProvisionAgentRequest(String email) {
+        this.email = email;
+    }
+
+    public String getEmail() {
+        return email;
+    }
 }

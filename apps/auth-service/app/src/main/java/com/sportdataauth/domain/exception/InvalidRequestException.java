@@ -7,9 +7,10 @@ public class InvalidRequestException extends DomainException {
     }
 
     public static InvalidRequestException nullValue(String field) {
-        return new InvalidRequestException("NULL_"+ field.toUpperCase());
+        return new InvalidRequestException("NULL_" + field.toUpperCase());
     }
+
     public static InvalidRequestException invalidValue(String field) {
-        return new InvalidRequestException("INVALID_"+ field.toUpperCase());
+        return new InvalidRequestException("INVALID_" + field.toUpperCase());
     }
 }
