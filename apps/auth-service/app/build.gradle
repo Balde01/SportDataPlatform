@@ -46,3 +46,35 @@ spotless {
 tasks.named('test') {
    useJUnitPlatform()
 }
+
+// PostgreSQL integration tests are kept separate from unit tests.
+// They require a running database and DB_* environment variables.
+sourceSets {
+   integrationTest {
+       java.srcDir 'src/integrationTest/java'
+       resources.srcDir 'src/integrationTest/resources'
+
+       compileClasspath += sourceSets.main.output
+       runtimeClasspath += sourceSets.main.output
+   }
+}
+
+// Reuse the same JUnit dependencies as the regular test source set.
+configurations {
+   integrationTestImplementation.extendsFrom testImplementation
+   integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+   description = 'Runs the integration tests.'
+   group = 'verification'
+
+   testClassesDirs = sourceSets.integrationTest.output.classesDirs
+   classpath = sourceSets.integrationTest.runtimeClasspath
+
+   useJUnitPlatform()
+   shouldRunAfter test
+}
+
+// integrationTest is intentionally not attached to `check` yet.
+// CI must provide PostgreSQL before integration tests can become part of `build`.
