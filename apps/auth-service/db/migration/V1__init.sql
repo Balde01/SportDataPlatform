@@ -3,12 +3,18 @@
 CREATE TABLE users (
   id UUID PRIMARY KEY,
   email VARCHAR(320) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255),
   role VARCHAR(30) NOT NULL,
   status VARCHAR(30) NOT NULL,
   failed_attempts INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL,
-  updated_at TIMESTAMPTZ NOT NULL
+  updated_at TIMESTAMPTZ NOT NULL,
+
+  CONSTRAINT chk_users_password_required_unless_disabled
+    CHECK (
+    status = 'DISABLED'
+    OR password_hash IS NOT NULL
+    )
 );
 
 CREATE TABLE invitation_tokens (
