@@ -9,13 +9,12 @@ public class BcryptPasswordHasher implements PasswordHasher {
 
     @Override
     public String hash(String rawPassword) {
-		rawPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt(10));
-		return rawPassword;
-	}
-	
-    @Override
-	public boolean matches(String rawPassword, String hashedPassword) {
-		return BCrypt.checkpw(rawPassword, hashedPassword);
-	}
+        rawPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt(10));
+        return rawPassword;
+    }
 
+    @Override
+    public boolean matches(String rawPassword, String hashedPassword) {
+        return BCrypt.checkpw(rawPassword, hashedPassword);
+    }
 }

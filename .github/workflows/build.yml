@@ -25,3 +25,24 @@ jobs:
      - name: Build auth-service with Gradle
        working-directory: apps/auth-service
        run: ./gradlew clean build
+
+     - name: Start PostgreSQL
+       working-directory: apps/auth-service
+       run: docker compose -f docker/docker-compose.yml up -d --wait postgres
+
+     - name: Run Flyway migrations
+       working-directory: apps/auth-service
+       run: docker compose -f docker/docker-compose.yml run --rm flyway
+
+     - name: Run PostgreSQL integration tests
+       working-directory: apps/auth-service
+       env:
+         DB_URL: jdbc:postgresql://localhost:5433/sportdataauth
+         DB_USER: sportdata
+         DB_PASSWORD: sportdata
+       run: ./gradlew integrationTest
+
+     - name: Stop Docker services
+       if: always()
+       working-directory: apps/auth-service
+       run: docker compose -f docker/docker-compose.yml down -v

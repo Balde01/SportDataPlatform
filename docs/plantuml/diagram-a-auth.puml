@@ -134,9 +134,12 @@ package "com.sportdataauth.dto" {
 package "com.sportdataauth.repository" {
 
  interface UserRepository {
-   + findByEmail(email: Email): User
-   + findById(id: UUID): User
-   + save(user: User): void
+   + insert(user: User): void
+   + update(user: User): void
+   + findByEmail(email: Email): Optional<User>
+   + findById(id: UUID): Optional<User>
+   + existsById(id: UUID): boolean
+   + existsByEmail(email: Email): boolean
  }
 
  interface InvitationTokenRepository {
@@ -177,12 +180,16 @@ package "com.sportdataauth.util" {
    + now(): Instant
  }
 
+ interface TransactionWork<T> {
+  + run : T
+ }
+
  interface TransactionRunner {
-   + runInTransaction(action: Runnable): void
+   + runInTransaction(work: TransactionWork<T>): void
  }
 
  class NoopTransactionRunner {
-   + runInTransaction(action: Runnable): void
+   + runInTransaction(work: TransactionWork<T>): void
  }
 
  TransactionRunner <|.. NoopTransactionRunner

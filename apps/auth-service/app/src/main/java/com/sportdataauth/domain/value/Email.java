@@ -1,10 +1,9 @@
 package com.sportdataauth.domain.value;
 
+import com.sportdataauth.domain.exception.EmailNotAllowedException;
 import java.text.Normalizer;
 import java.util.Locale;
 import java.util.Objects;
-
-import com.sportdataauth.domain.exception.EmailNotAllowedException;
 
 public final class Email {
 
@@ -24,7 +23,7 @@ public final class Email {
         canonical = canonical.toLowerCase(Locale.ROOT);
 
         if (canonical.isBlank()) {
-            throw new  EmailNotAllowedException();
+            throw new EmailNotAllowedException();
         }
 
         return new Email(canonical);
@@ -36,8 +35,10 @@ public final class Email {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Email)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Email))
+            return false;
         Email email = (Email) o;
         return value.equals(email.value);
     }
