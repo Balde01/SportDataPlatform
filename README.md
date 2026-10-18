@@ -3,34 +3,80 @@
 
 ## Overview
 
-SportData Platform is a structured backend project designed for **sports data collection** with controlled access for:
+SportData Platform is a platform for collecting, structuring and managing sports data related to competitions, participants and performance through secure services and user-facing applications.
 
-- Agents (data collectors)
-- Clients (future phase)
-
-The platform is built progressively with a clean and scalable architecture, starting with an Identity/Auth core.
+It is designed to support the lifecycle of sports data, from collection and organization to visualization and data-driven applications.
 
 ---
 
 ## Current Status
 
-- ✅ Phase A – Identity/Auth MVP (implemented and fully unit-tested)
-- ⏳ Phase B – Admin / Provisioning (planned)
-- ⏳ Phase C – Governance / Audit (planned)
-- 🔜 Domain Logic – Sports data collection workflows
+The project is currently focused on completing the technical foundation required before introducing the sports data collection domain.
+
+### Phase A – Identity/Auth Core
+
+In progress
+
+Implemented:
+
+- Account registration and invitation flows
+- Authentication and account status handling
+- PostgreSQL persistence with JDBC
+- Flyway-managed database schema
+- Unit and PostgreSQL integration tests
+- GitHub Actions CI with PostgreSQL and Flyway
+
+Remaining:
+
+- HTTP / REST API layer
+- Persistent refresh tokens
+- Production-ready JWT
+- Authentication concurrency and transaction hardening
+
+### Phase B – Admin / Provisioning
+
+Planned
+
+### Phase C – Governance / Audit
+
+Planned
+
+### Sports Data Domain
+
+Planned
+
+### Web Application
+
+Planned
+
+The web application will provide user-facing interfaces for sports data,
+administration and other platform workflows.
 
 ---
 
 ## Repository Structure
+
 ```text
 SportDataPlatform/
+├── .github/
+│   └── workflows/
+│       └── build.yml
 │
 ├── apps/
-│ └── auth-service/               → Identity/Auth MVP
+│   └── auth-service/
+│       ├── app/                   → Java source code and tests
+│       ├── config/                → Development tooling configuration
+│       ├── db/
+│       │   └── migration/         → Flyway database migrations
+│       ├── docker/                → Local PostgreSQL environment
+│       └── README.md
 │
 ├── docs/
-│ └── architecture/
-│ └── identity-access/            → Detailed documentation (FR / EN)
+│   ├── architecture/
+│   │   └── identity-access/       → Identity and access documentation
+│   ├── diagrams-visual/
+│   │   └── identity-access/       → Exported architecture diagrams
+│   └── drawio/                    → Editable diagram sources
 │
 └── README.md
 ```
@@ -52,7 +98,7 @@ Main documents include:
 
 Visual diagrams are available in:
 
-docs/architecture/identity-access/diagrams-visual/
+[`docs/diagrams-visual/identity-access/`](docs/diagrams-visual/identity-access/)
 
 ---
 
@@ -60,7 +106,7 @@ docs/architecture/identity-access/diagrams-visual/
 
 See:
 
-apps/auth-service/README.md
+[`apps/auth-service/README.md`](apps/auth-service/README.md)
 
 ---
 
@@ -68,41 +114,47 @@ apps/auth-service/README.md
 
 - Java 21
 - Gradle
+- PostgreSQL 16
+- JDBC
+- Flyway
+- Docker Compose
 - JUnit 5
 - BCrypt
-- GitHub Actions (CI)
+- GitHub Actions
 
 ---
 
 ## Roadmap (High-Level)
 
-1. Identity/Auth MVP (accounts, invitations, login, refresh tokens)
-2. Admin provisioning (agent lifecycle management)
-3. Governance/Audit (traceability, security logs)
-4. Domain logic for sports data collection
+1. Complete the Identity/Auth foundation and expose it through an HTTP / REST API
+2. Introduce the web application
+3. Admin provisioning
+4. Governance and audit
+5. Sports data collection and management features
 
 ---
 
 ## Continuous Integration
 
-This project uses GitHub Actions for automated builds and test execution.
+GitHub Actions validates the Auth Service on pull requests and pushes to
+`develop` and `main`.
 
-Every push or pull request to develop and main triggers:
+The pipeline:
 
-- Gradle build
-
-- Full test suite execution
-
-- Automatic failure detection
+1. Builds the Auth Service, checks source formatting and runs unit tests
+2. Starts PostgreSQL 16 with Docker Compose
+3. Applies Flyway migrations
+4. Runs PostgreSQL integration tests
+5. Cleans up the Docker environment
 
 ---
 
 ## Design Principles
 
-- Clean architecture separation (domain / repository / service / security)
+- Clean Architecture principles with clear separation of domain, application and infrastructure concerns
 - Test-driven development mindset
 - Incremental phase-based growth
-- Scalability-ready structure
+- Explicit abstractions between business logic and persistence
 
 ---
 
