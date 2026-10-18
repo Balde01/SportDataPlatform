@@ -1,96 +1,107 @@
 @startuml
 ' ============================================================
-' Diagram B - Admin / Provisioning
-' Purpose: manage AGENT accounts (invite, reissue, roles, status)
-' Depends on Identity/Auth (Diagram A)
+' Diagram C - Governance / Audit
+' Purpose:
+' - trace sensitive administrative actions
+' - ensure administrative accountability
+' - bootstrap the initial root administrator
+'
+' Depends on Identity/Auth and Admin/Provisioning
 ' ============================================================
 
 left to right direction
+
 skinparam linetype ortho
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 
-package "model (from Auth)" {
+' =========================
+' MODEL
+' =========================
+package "model" {
 
-  enum Role {
-    ADMIN
-    AGENT
-    CLIENT
+  enum AdminAction {
+    PROVISION_AGENT
+    REISSUE_INVITE
+    UPDATE_ROLES
+    DISABLE_USER
+    ENABLE_USER
+    RESET_PASSWORD
   }
 
-  enum UserStatus {
-    ACTIVE
-    LOCKED
-    DISABLED
-  }
-
-  class User {
+  class AdminAuditLog {
     - id: UUID
-    - email: String
-    - roles: Set<Role>
-    - status: UserStatus
+    - actorUserId: UUID
+    - targetUserId: UUID
+    - action: AdminAction
+    - metadata: String
+    - createdAt: Instant
   }
 }
 
-package "dto" {
-  class ProvisionAgentRequest {
-    + email: String
-  }
+' =========================
+' REPOSITORY
+' =========================
+package "repository" {
 
-  class ReissueInviteRequest {
-    + email: String
-  }
-
-  class UpdateRolesRequest {
-    + email: String
-    + roles: Set<Role>
+  interface AdminAuditLogRepository {
+    + save(log: AdminAuditLog): void
   }
 }
 
-package "repository (from Auth)" {
-  interface UserRepository {
-    + findByEmail(email: String): User
-    + save(user: User): void
-  }
-}
-
+' =========================
+' SERVICES
+' =========================
 package "service" {
 
-  class UserManagementService {
+  class AuditService {
+    - auditRepo: AdminAuditLogRepository
+    - clock: Clock
+
+    + log(
+        actorId: UUID,
+        action: AdminAction,
+        targetUserId: UUID,
+        metadata: String
+      ): void
+  }
+
+  class AdminBootstrapper {
     - userRepository: UserRepository
-    - invitationService: InvitationService
-    - authorizationService: AuthorizationService
+    - passwordHasher: PasswordHasher
+    - clock: Clock
 
-    + provisionAgent(req: ProvisionAgentRequest, actor: User): void
-    + reissueAgentInvite(req: ReissueInviteRequest, actor: User): void
-    + updateRoles(req: UpdateRolesRequest, actor: User): void
-    + disableUser(email: String, actor: User): void
-    + enableUser(email: String, actor: User): void
-  }
+    - email: String
+    - rawPassword: String
 
-  class AuthorizationService {
-    + requireRole(user: User, role: Role): void
-    + requireAnyRole(user: User, roles: Set<Role>): void
-  }
-
-  ' referenced from Diagram A
-  class InvitationService {
-    + provisionAgent(req: ProvisionAgentRequest): void
-    + reissueInvite(email: String): void
+    + ensureRootAdminExists(): void
   }
 }
 
 ' =========================
-' Dependencies
+' DEPENDENCIES FROM AUTH
 ' =========================
-UserManagementService ..> UserRepository
-UserManagementService ..> InvitationService
-UserManagementService ..> AuthorizationService
-UserManagementService ..> ProvisionAgentRequest
-UserManagementService ..> ReissueInviteRequest
-UserManagementService ..> UpdateRolesRequest
+package "dependencies (from Auth)" {
 
-AuthorizationService ..> User
-AuthorizationService ..> Role
+  interface Clock
+
+  interface PasswordHasher
+
+  interface UserRepository
+}
+
+' =========================
+' RELATIONSHIPS
+' =========================
+AdminAuditLog --> AdminAction
+
+AuditService ..> AdminAuditLogRepository
+AuditService ..> AdminAuditLog
+AuditService ..> AdminAction
+AuditService ..> Clock
+
+AdminBootstrapper ..> UserRepository
+AdminBootstrapper ..> PasswordHasher
+AdminBootstrapper ..> Clock
 
 @enduml

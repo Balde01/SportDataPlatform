@@ -13,7 +13,9 @@
 ' - JwtService returns JwtToken as source of truth for expiresAt
 ' - All timestamps use Instant (via Clock)
 ' - Invitation token consumption is atomic at repository level (consume)
-' - TransactionRunner defines the transaction boundary (noop now, real later)
+' - TransactionRunner defines the transaction boundary
+' - NoopTransactionRunner is used for in-memory tests
+' - JdbcTransactionRunner provides PostgreSQL transaction boundaries
 ' ============================================================
 
 skinparam classAttributeIconSize 0
@@ -181,15 +183,15 @@ package "com.sportdataauth.util" {
  }
 
  interface TransactionWork<T> {
-  + run : T
+   + run() : T
  }
 
  interface TransactionRunner {
-   + runInTransaction(work: TransactionWork<T>): void
+   + runInTransaction<T>(work: TransactionWork<T>): T
  }
 
  class NoopTransactionRunner {
-   + runInTransaction(work: TransactionWork<T>): void
+   + runInTransaction<T>(work: TransactionWork<T>): T
  }
 
  TransactionRunner <|.. NoopTransactionRunner
