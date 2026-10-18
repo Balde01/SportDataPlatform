@@ -26,7 +26,7 @@ package "model (from Auth)" {
 
   class User {
     - id: UUID
-    - email: String
+    - email: Email
     - roles: Set<Role>
     - status: UserStatus
   }
@@ -49,8 +49,9 @@ package "dto" {
 
 package "repository (from Auth)" {
   interface UserRepository {
-    + findByEmail(email: String): User
-    + save(user: User): void
+    + findByEmail(email: Email): Optional<User>
+    + insert(user: User): void
+    + update(user: User): void
   }
 }
 
@@ -73,11 +74,7 @@ package "service" {
     + requireAnyRole(user: User, roles: Set<Role>): void
   }
 
-  ' referenced from Diagram A
-  class InvitationService {
-    + provisionAgent(req: ProvisionAgentRequest): void
-    + reissueInvite(email: String): void
-  }
+  class InvitationService
 }
 
 ' =========================
