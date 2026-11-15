@@ -23,7 +23,7 @@ public class RefreshToken {
         if (tokenHash.isBlank()) {
             throw new IllegalArgumentException("TOKEN_HASH_IS_REQUIRED");
         }
-        
+
         this.expiresAt = Objects.requireNonNull(expiresAt, "EXPIRES_AT_IS_REQUIRED");
         this.revokedAt = revokedAt;
         this.createdAt = Objects.requireNonNull(createdAt, "CREATED_AT_IS_REQUIRED");
@@ -34,7 +34,7 @@ public class RefreshToken {
         if (revokedAt != null && revokedAt.isBefore(createdAt)) {
             throw new IllegalArgumentException("REVOKED_AT_MUST_NOT_BE_BEFORE_CREATED_AT");
         }
-        
+
     }
 
     public boolean isExpired(Instant now) {
